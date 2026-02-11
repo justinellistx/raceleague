@@ -51,7 +51,6 @@ export default function TeamsPage() {
       if (tmErr) return setError(tmErr.message)
       setTeamMembers((tm ?? []) as TeamMember[])
 
-      // We only need people to count humans accurately
       const { data: p, error: pErr } = await supabase
         .from('people')
         .select('id, display_name, is_human')
@@ -62,8 +61,6 @@ export default function TeamsPage() {
     }
 
     load()
-
-    // Lightweight auto-refresh so roster counts stay accurate
     const id = setInterval(load, 10000)
 
     return () => {
@@ -99,102 +96,97 @@ export default function TeamsPage() {
   }, [teams, q])
 
   return (
-    <main
-      style={{
-        padding: 24,
-        fontFamily: 'system-ui',
-        color: '#111',
-        background: '#f6f7f9',
-        minHeight: '100vh',
-      }}
-    >
-      {/* Top nav */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 950, marginBottom: 10, marginTop: 0 }}>Teams</h1>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <Link href="/" style={{ color: '#111', textDecoration: 'underline', fontWeight: 800 }}>
-            Home
-          </Link>
-          <Link href="/drivers" style={{ color: '#111', textDecoration: 'underline', fontWeight: 800 }}>
-            Drivers
-          </Link>
-          <Link href="/teams" style={{ color: '#111', textDecoration: 'underline', fontWeight: 800 }}>
-            Teams
-          </Link>
-        </div>
-      </div>
+    <>
+      <SiteNav />
 
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search team..."
-          style={{
-            width: 320,
-            padding: '10px 12px',
-            borderRadius: 10,
-            border: '1px solid #ddd',
-            outline: 'none',
-            color: '#111',
-            background: '#fff',
-          }}
-        />
-        <div style={{ alignSelf: 'center', color: '#333', fontWeight: 800 }}>
-          {filteredTeams.length} teams
+      <main className="container">
+        <h1 className="h1">Teams</h1>
+        <div className="subtle" style={{ marginBottom: 16 }}>
+          Team rosters and standings (humans only).
         </div>
-      </div>
 
-      {error && (
-        <div
-          style={{
-            padding: 12,
-            background: '#fee',
-            border: '1px solid #f99',
-            borderRadius: 12,
-            color: '#111',
-            marginBottom: 12,
-          }}
-        >
-          Error: {error}
+        <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+          <input
+            className="input"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search team..."
+            style={{ width: 320 }}
+          />
+          <div className="subtle" style={{ fontWeight: 950 }}>
+            {filteredTeams.length} teams
+          </div>
         </div>
-      )}
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-          gap: 12,
-        }}
-      >
-        {filteredTeams.map((t) => (
-          <Link
-            key={t.id}
-            href={`/teams/${t.id}`}
+        {error && (
+          <div
+            className="card cardPad"
             style={{
-              textDecoration: 'none',
-              color: '#111',
-              border: '1px solid #d7d7d7',
-              borderRadius: 14,
-              padding: 16,
-              background: '#fff',
-              boxShadow: '0 6px 16px rgba(0,0,0,0.08)',
-              display: 'block',
+              borderColor: 'rgba(239,68,68,0.35)',
+              background: 'rgba(239,68,68,0.10)',
+              marginBottom: 12,
             }}
           >
-            <div style={{ fontWeight: 950, fontSize: 16 }}>{t.name ?? 'Team'}</div>
+            <b>Error:</b> {error}
+          </div>
+        )}
 
-            <div style={{ marginTop: 8, fontSize: 13, color: '#333' }}>
-              Human drivers:{' '}
-              <b style={{ color: '#111' }}>{humanCountByTeamId.get(t.id) ?? 0}</b>
-            </div>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+            gap: 12,
+          }}
+        >
+          {filteredTeams.map((t) => (
+            <Link
+              key={t.id}
+              href={`/teams/${t.id}`}
+              className="card"
+              style={{
+                textDecoration: 'none',
+                color: 'inherit',
+                padding: 16,
+                display: 'block',
+                borderRadius: 18,
+                transition: 'transform 0.12s ease, border-color 0.12s ease',
+              }}
+              onMouseEnter={(e) => {
+                ;(e.currentTarget as any).style.transform = 'translateY(-2px)'
+                ;(e.currentTarget as any).style.borderColor = 'rgba(96,165,250,0.35)'
+              }}
+              onMouseLeave={(e) => {
+                ;(e.currentTarget as any).style.transform = 'translateY(0px)'
+                ;(e.currentTarget as any).style.borderColor = 'rgba(255,255,255,0.12)'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                <div style={{ fontWeight: 950, fontSize: 16 }}>{t.name ?? 'Team'}</div>
 
-            <div style={{ marginTop: 10, fontSize: 12, color: '#333', fontWeight: 800 }}>
-              View team profile →
-            </div>
-          </Link>
-        ))}
-      </div>
-    </main>
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 950,
+                    padding: '6px 10px',
+                    borderRadius: 999,
+                    border: '1px solid rgba(34,197,94,0.35)',
+                    background: 'rgba(34,197,94,0.10)',
+                    color: '#e5e7eb',
+                  }}
+                >
+                  Humans: {humanCountByTeamId.get(t.id) ?? 0}
+                </div>
+              </div>
+
+              <div className="subtle" style={{ marginTop: 10 }}>
+                View team profile →
+              </div>
+            </Link>
+          ))}
+        </div>
+      </main>
+    </>
   )
 }
+
 
