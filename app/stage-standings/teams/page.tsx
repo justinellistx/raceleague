@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabaseClient'
 
 type Row = {
   team_id: string
-  team_name: string | null
+  name: string | null
   stage_number: number | null
   stage_points_counted: number | null
 }
@@ -23,7 +23,7 @@ export default function TeamStageStandingsPage() {
 
       const { data, error: e } = await supabase
         .from('v_iracing_team_stage_standings')
-        .select('team_id, team_name, stage_number, stage_points_counted')
+        .select('team_id, name, stage_number, stage_points_counted')
         .eq('stage_number', stage)
         .order('stage_points_counted', { ascending: false })
 
@@ -37,7 +37,7 @@ export default function TeamStageStandingsPage() {
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase()
     if (!needle) return rows
-    return rows.filter((r) => (r.team_name ?? '').toLowerCase().includes(needle))
+    return rows.filter((r) => (r.name ?? '').toLowerCase().includes(needle))
   }, [rows, q])
 
   return (
@@ -103,8 +103,10 @@ export default function TeamStageStandingsPage() {
                 }}
               >
                 <div style={{ fontWeight: 950 }}>{idx + 1}</div>
-                <div style={{ fontWeight: 900 }}>{r.team_name ?? 'Team'}</div>
-                <div style={{ textAlign: 'right', fontWeight: 950 }}>{Number(r.stage_points_counted ?? 0)}</div>
+                <div style={{ fontWeight: 900 }}>{r.name ?? 'Team'}</div>
+                <div style={{ textAlign: 'right', fontWeight: 950 }}>
+                  {Number(r.stage_points_counted ?? 0)}
+                </div>
               </div>
             ))}
           </div>
@@ -113,3 +115,4 @@ export default function TeamStageStandingsPage() {
     </>
   )
 }
+
