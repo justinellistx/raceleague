@@ -114,7 +114,6 @@ export default function DriverProfilePage() {
 
       if (cancelled) return
       if (sErr) {
-        // treat as preseason/optional
         setSeasonRank(null)
         setSeasonPoints(null)
       } else {
@@ -207,257 +206,250 @@ export default function DriverProfilePage() {
   const fallbackLetter = (driverName?.[0] ?? '?').toUpperCase()
 
   return (
-    <main
-      style={{
-        padding: 24,
-        fontFamily: 'system-ui',
-        color: '#111',
-        background: '#f6f7f9',
-        minHeight: '100vh',
-      }}
-    >
+    <>
       <SiteNav />
 
-      <Link href="/drivers" style={{ textDecoration: 'none', color: '#111', fontWeight: 900 }}>
-        ← Back to Drivers
-      </Link>
-
-      {error && (
-        <div
+      <main className="container">
+        <Link
+          href="/drivers"
           style={{
-            marginTop: 12,
-            padding: 12,
-            background: '#fee',
-            border: '1px solid #f99',
+            textDecoration: 'none',
+            fontWeight: 950,
+            padding: '10px 12px',
             borderRadius: 12,
-            color: '#111',
+            border: '1px solid rgba(255,255,255,0.14)',
+            background: 'rgba(255,255,255,0.06)',
+            display: 'inline-block',
+            color: '#e5e7eb',
           }}
         >
-          Error: {error}
-        </div>
-      )}
+          ← Back to Drivers
+        </Link>
 
-      {person && (
-        <>
+        {error && (
           <div
+            className="card cardPad"
             style={{
-              marginTop: 14,
-              display: 'flex',
-              justifyContent: 'space-between',
-              gap: 12,
-              alignItems: 'center',
-              flexWrap: 'wrap',
+              marginTop: 12,
+              borderColor: 'rgba(239,68,68,0.35)',
+              background: 'rgba(239,68,68,0.10)',
             }}
           >
-            <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-             <Avatar
-  srcJpg={`/driver-photos/${personId}.jpg`}
-  srcPng={`/driver-photos/${personId}.png`}
-  alt={driverName}
-  size={110}
-  fallbackText={fallbackLetter}
-/>
+            <b>Error:</b> {error}
+          </div>
+        )}
 
-
-              <div>
-                <h1 style={{ margin: 0, fontSize: 32, fontWeight: 950 }}>{driverName}</h1>
-
-                <div style={{ marginTop: 6, color: '#333' }}>
-                  Team:{' '}
-                  {teamId ? (
-                    <Link
-                      href={`/teams/${teamId}`}
-                      style={{ color: '#111', fontWeight: 900, textDecoration: 'underline' }}
-                    >
-                      {teamName ?? 'Team'}
-                    </Link>
-                  ) : (
-                    <b style={{ color: '#111' }}>{teamName ?? '—'}</b>
-                  )}
-                </div>
-              </div>
-            </div>
-
+        {person && (
+          <>
+            {/* Header / Driver ID */}
             <div
+              className="card"
               style={{
-                fontSize: 12,
-                fontWeight: 900,
-                padding: '6px 10px',
-                borderRadius: 999,
-                border: '1px solid #ccc',
-                background: '#dff5e7',
-                color: '#111',
+                marginTop: 16,
+                padding: 18,
+                borderRadius: 20,
+                background: 'linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06))',
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: 16,
+                alignItems: 'center',
+                flexWrap: 'wrap',
               }}
             >
-              HUMAN
-            </div>
-          </div>
+              <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+                <Avatar
+                  srcJpg={`/driver-photos/${personId}.jpg`}
+                  srcPng={`/driver-photos/${personId}.png`}
+                  alt={driverName}
+                  size={110}
+                  fallbackText={fallbackLetter}
+                />
 
-          <div
-            style={{
-              marginTop: 16,
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: 12,
-            }}
-          >
-            <StatCard
-              label="Season Standing"
-              value={seasonRank ? `P${seasonRank}` : '—'}
-              sub={`Points: ${seasonPoints ?? '—'}`}
-            />
-            <StatCard label="Starts" value={`${stats.starts}`} />
-            <StatCard label="Average Start" value={stats.avgStart != null ? stats.avgStart.toFixed(1) : '—'} />
-            <StatCard label="Average Finish" value={stats.avgFinish != null ? stats.avgFinish.toFixed(1) : '—'} />
-            <StatCard label="Best Finish" value={stats.bestFinish != null ? `P${stats.bestFinish}` : '—'} />
-            <StatCard label="Total Laps Led" value={`${stats.totalLapsLed}`} />
-            <StatCard label="Best Lap" value={formatMs(stats.bestLapMs)} />
-            <StatCard label="Avg Incidents" value={stats.avgIncidents != null ? stats.avgIncidents.toFixed(1) : '—'} />
-          </div>
+                <div>
+                  <div className="subtle" style={{ fontWeight: 950, letterSpacing: '0.08em' }}>
+                    DRIVER PROFILE
+                  </div>
 
-          {/* Stage Standings */}
-          <div
-            style={{
-              marginTop: 18,
-              border: '1px solid #d7d7d7',
-              borderRadius: 14,
-              padding: 14,
-              background: '#fff',
-              boxShadow: '0 6px 16px rgba(0,0,0,0.08)',
-            }}
-          >
-            <h2 style={{ margin: 0, marginBottom: 10, fontSize: 16, fontWeight: 950 }}>
-              Stage Standings
-            </h2>
+                  <h1 className="h1" style={{ marginTop: 6, marginBottom: 6 }}>
+                    {driverName}
+                  </h1>
 
-            {stageSummary.list.length === 0 ? (
-              <div style={{ color: '#333', fontWeight: 800 }}>
-                No stage points yet (preseason or no scored stages).
-              </div>
-            ) : (
-              <>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ textAlign: 'left' }}>
-                      <th style={{ borderBottom: '1px solid #ddd', padding: 8, color: '#111' }}>Stage</th>
-                      <th style={{ borderBottom: '1px solid #ddd', padding: 8, color: '#111' }}>Points</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stageSummary.list.map((s) => (
-                      <tr key={`stage-${s.stageNumber}`}>
-                        <td style={{ borderBottom: '1px solid #f0f0f0', padding: 8, color: '#111' }}>
-                          Stage {s.stageNumber}
-                        </td>
-                        <td style={{ borderBottom: '1px solid #f0f0f0', padding: 8, color: '#111' }}>
-                          {s.points ?? 0}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                <div style={{ marginTop: 10, color: '#333', fontWeight: 900 }}>
-                  Total stage points: <span style={{ color: '#111' }}>{stageSummary.total}</span>
+                  <div className="subtle">
+                    Team:{' '}
+                    {teamId ? (
+                      <Link
+                        href={`/teams/${teamId}`}
+                        style={{
+                          color: '#e5e7eb',
+                          fontWeight: 950,
+                          textDecoration: 'none',
+                          borderBottom: '1px solid rgba(96,165,250,0.45)',
+                        }}
+                      >
+                        {teamName ?? 'Team'}
+                      </Link>
+                    ) : (
+                      <span style={{ fontWeight: 950, color: '#e5e7eb' }}>{teamName ?? '—'}</span>
+                    )}
+                  </div>
                 </div>
-              </>
-            )}
-          </div>
-
-          {/* Recent Results */}
-          <div
-            style={{
-              marginTop: 18,
-              border: '1px solid #d7d7d7',
-              borderRadius: 14,
-              padding: 14,
-              background: '#fff',
-              boxShadow: '0 6px 16px rgba(0,0,0,0.08)',
-            }}
-          >
-            <h2 style={{ margin: 0, marginBottom: 10, fontSize: 16, fontWeight: 950 }}>
-              Recent Results
-            </h2>
-
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ textAlign: 'left' }}>
-                  <th style={{ borderBottom: '1px solid #ddd', padding: 8, color: '#111' }}>Race</th>
-                  <th style={{ borderBottom: '1px solid #ddd', padding: 8, color: '#111' }}>Start</th>
-                  <th style={{ borderBottom: '1px solid #ddd', padding: 8, color: '#111' }}>Finish</th>
-                  <th style={{ borderBottom: '1px solid #ddd', padding: 8, color: '#111' }}>Laps Led</th>
-                  <th style={{ borderBottom: '1px solid #ddd', padding: 8, color: '#111' }}>Fastest Lap</th>
-                  <th style={{ borderBottom: '1px solid #ddd', padding: 8, color: '#111' }}>Inc</th>
-                  <th style={{ borderBottom: '1px solid #ddd', padding: 8, color: '#111' }}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.map((r, i) => (
-                  <tr key={`${r.race_id}-${i}`}>
-                    <td
-                      style={{
-                        borderBottom: '1px solid #f0f0f0',
-                        padding: 8,
-                        color: '#111',
-                        fontFamily: 'monospace',
-                        fontSize: 12,
-                      }}
-                    >
-                      {r.race_id.slice(0, 8)}…
-                    </td>
-                    <td style={{ borderBottom: '1px solid #f0f0f0', padding: 8, color: '#111' }}>
-                      {r.start_position ?? '—'}
-                    </td>
-                    <td style={{ borderBottom: '1px solid #f0f0f0', padding: 8, color: '#111' }}>
-                      {r.finish_position != null ? `P${r.finish_position}` : '—'}
-                    </td>
-                    <td style={{ borderBottom: '1px solid #f0f0f0', padding: 8, color: '#111' }}>
-                      {r.laps_led ?? 0}
-                    </td>
-                    <td style={{ borderBottom: '1px solid #f0f0f0', padding: 8, color: '#111' }}>
-                      {r.fastest_lap_time_ms != null ? `${(r.fastest_lap_time_ms / 1000).toFixed(3)}s` : '—'}
-                    </td>
-                    <td style={{ borderBottom: '1px solid #f0f0f0', padding: 8, color: '#111' }}>
-                      {r.incidents ?? 0}
-                    </td>
-                    <td style={{ borderBottom: '1px solid #f0f0f0', padding: 8, color: '#111' }}>
-                      {r.status ?? '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {results.length === 0 && (
-              <div style={{ marginTop: 10, color: '#333', fontWeight: 800 }}>
-                No results yet for this driver.
               </div>
-            )}
-          </div>
-        </>
-      )}
-    </main>
+
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 950,
+                    padding: '6px 10px',
+                    borderRadius: 999,
+                    border: '1px solid rgba(34,197,94,0.35)',
+                    background: 'rgba(34,197,94,0.10)',
+                    color: '#e5e7eb',
+                    letterSpacing: '0.06em',
+                  }}
+                >
+                  HUMAN
+                </span>
+
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 950,
+                    padding: '6px 10px',
+                    borderRadius: 999,
+                    border: '1px solid rgba(96,165,250,0.35)',
+                    background: 'rgba(96,165,250,0.10)',
+                    color: '#e5e7eb',
+                    letterSpacing: '0.06em',
+                  }}
+                >
+                  {seasonRank ? `SEASON P${seasonRank}` : 'SEASON —'}
+                </span>
+              </div>
+            </div>
+
+            {/* Stat grid */}
+            <div
+              style={{
+                marginTop: 14,
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: 12,
+              }}
+            >
+              <StatCard label="Season Standing" value={seasonRank ? `P${seasonRank}` : '—'} sub={`Points: ${seasonPoints ?? '—'}`} />
+              <StatCard label="Starts" value={`${stats.starts}`} />
+              <StatCard label="Average Start" value={stats.avgStart != null ? stats.avgStart.toFixed(1) : '—'} />
+              <StatCard label="Average Finish" value={stats.avgFinish != null ? stats.avgFinish.toFixed(1) : '—'} />
+              <StatCard label="Best Finish" value={stats.bestFinish != null ? `P${stats.bestFinish}` : '—'} />
+              <StatCard label="Total Laps Led" value={`${stats.totalLapsLed}`} />
+              <StatCard label="Best Lap" value={formatMs(stats.bestLapMs)} />
+              <StatCard label="Avg Incidents" value={stats.avgIncidents != null ? stats.avgIncidents.toFixed(1) : '—'} />
+            </div>
+
+            {/* Stage Standings */}
+            <div className="card cardPad" style={{ marginTop: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'baseline' }}>
+                <h2 style={{ margin: 0, fontSize: 14, fontWeight: 950, letterSpacing: '0.02em' }}>Stage Standings</h2>
+                <div className="subtle" style={{ fontWeight: 950 }}>
+                  Total: {stageSummary.total}
+                </div>
+              </div>
+
+              {stageSummary.list.length === 0 ? (
+                <div className="subtle" style={{ marginTop: 10, fontWeight: 900 }}>
+                  No stage points yet (preseason or no scored stages).
+                </div>
+              ) : (
+                <div className="card" style={{ overflow: 'hidden', borderRadius: 14, marginTop: 12 }}>
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th className="th">Stage</th>
+                        <th className="th" style={{ textAlign: 'right' }}>
+                          Points
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stageSummary.list.map((s) => (
+                        <tr key={`stage-${s.stageNumber}`} className="rowHover">
+                          <td className="td" style={{ fontWeight: 900 }}>
+                            Stage {s.stageNumber}
+                          </td>
+                          <td className="td" style={{ textAlign: 'right', fontWeight: 950 }}>
+                            {s.points ?? 0}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Recent Results */}
+            <div className="card cardPad" style={{ marginTop: 14 }}>
+              <h2 style={{ margin: 0, fontSize: 14, fontWeight: 950, letterSpacing: '0.02em' }}>Recent Results</h2>
+
+              {results.length === 0 ? (
+                <div className="subtle" style={{ marginTop: 10, fontWeight: 900 }}>
+                  No results yet for this driver.
+                </div>
+              ) : (
+                <div className="card" style={{ overflow: 'hidden', borderRadius: 14, marginTop: 12 }}>
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th className="th">Race</th>
+                        <th className="th">Start</th>
+                        <th className="th">Finish</th>
+                        <th className="th">Laps Led</th>
+                        <th className="th">Fastest</th>
+                        <th className="th">Inc</th>
+                        <th className="th">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {results.map((r, i) => (
+                        <tr key={`${r.race_id}-${i}`} className="rowHover">
+                          <td className="td" style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 12 }}>
+                            {r.race_id.slice(0, 8)}…
+                          </td>
+                          <td className="td">{r.start_position ?? '—'}</td>
+                          <td className="td" style={{ fontWeight: 950 }}>
+                            {r.finish_position != null ? `P${r.finish_position}` : '—'}
+                          </td>
+                          <td className="td">{r.laps_led ?? 0}</td>
+                          <td className="td">
+                            {r.fastest_lap_time_ms != null ? `${(r.fastest_lap_time_ms / 1000).toFixed(3)}s` : '—'}
+                          </td>
+                          <td className="td">{r.incidents ?? 0}</td>
+                          <td className="td">{r.status ?? '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </main>
+    </>
   )
 }
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div
-      style={{
-        border: '1px solid #d7d7d7',
-        borderRadius: 14,
-        padding: 14,
-        background: '#fff',
-        color: '#111',
-        boxShadow: '0 6px 16px rgba(0,0,0,0.08)',
-      }}
-    >
-      <div style={{ fontSize: 12, color: '#444', fontWeight: 800 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 950, marginTop: 6, color: '#111' }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: '#333', marginTop: 4 }}>{sub}</div>}
+    <div className="card cardPad">
+      <div style={{ fontSize: 12, color: 'rgba(229,231,235,0.72)', fontWeight: 900 }}>{label}</div>
+      <div style={{ fontSize: 22, fontWeight: 950, marginTop: 8 }}>{value}</div>
+      {sub && <div className="subtle" style={{ marginTop: 6, fontSize: 12 }}>{sub}</div>}
     </div>
   )
 }
+
 
 
 
