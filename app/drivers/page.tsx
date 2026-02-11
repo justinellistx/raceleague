@@ -115,56 +115,42 @@ export default function DriversPage() {
     <>
       <SiteNav />
 
-      <main
-        style={{
-          padding: 24,
-          fontFamily: 'system-ui',
-          color: '#111',
-          background: '#f6f7f9',
-          minHeight: '100vh',
-        }}
-      >
-        <h1 style={{ fontSize: 28, fontWeight: 950, marginBottom: 10 }}>Drivers</h1>
+      <main className="container">
+        <h1 className="h1">Drivers</h1>
+        <div className="subtle" style={{ marginBottom: 16 }}>
+          Humans only • Click a driver to view profile
+        </div>
 
-        <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
           <input
+            className="input"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search driver..."
-            style={{
-              width: 320,
-              padding: '10px 12px',
-              borderRadius: 10,
-              border: '1px solid #ddd',
-              outline: 'none',
-              color: '#111',
-              background: '#fff',
-            }}
+            style={{ width: 320 }}
           />
-          <div style={{ color: '#333', fontWeight: 800, alignSelf: 'center' }}>
+          <div className="subtle" style={{ fontWeight: 950 }}>
             {filtered.length} drivers
           </div>
         </div>
 
         {error && (
           <div
+            className="card cardPad"
             style={{
-              padding: 12,
-              background: '#fee',
-              border: '1px solid #f99',
-              borderRadius: 12,
-              color: '#111',
+              borderColor: 'rgba(239,68,68,0.35)',
+              background: 'rgba(239,68,68,0.10)',
               marginBottom: 12,
             }}
           >
-            Error: {error}
+            <b>Error:</b> {error}
           </div>
         )}
 
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))',
             gap: 12,
           }}
         >
@@ -181,17 +167,27 @@ export default function DriversPage() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') router.push(`/drivers/${d.id}`)
                 }}
+                className="card"
                 style={{
                   cursor: 'pointer',
-                  color: '#111',
-                  border: '1px solid #d7d7d7',
-                  borderRadius: 14,
                   padding: 16,
-                  background: '#fff',
-                  boxShadow: '0 6px 16px rgba(0,0,0,0.08)',
+                  borderRadius: 18,
+                  transition: 'transform 0.12s ease, border-color 0.12s ease, background 0.12s ease',
+                }}
+                onMouseEnter={(e) => {
+                  ;(e.currentTarget as any).style.transform = 'translateY(-2px)'
+                  ;(e.currentTarget as any).style.borderColor = 'rgba(96,165,250,0.35)'
+                  ;(e.currentTarget as any).style.background =
+                    'linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.06))'
+                }}
+                onMouseLeave={(e) => {
+                  ;(e.currentTarget as any).style.transform = 'translateY(0px)'
+                  ;(e.currentTarget as any).style.borderColor = 'rgba(255,255,255,0.12)'
+                  ;(e.currentTarget as any).style.background =
+                    'linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.06))'
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
                   <div
                     style={{
                       fontWeight: 950,
@@ -207,34 +203,40 @@ export default function DriversPage() {
                   <div
                     style={{
                       fontSize: 11,
-                      fontWeight: 900,
-                      padding: '4px 10px',
+                      fontWeight: 950,
+                      padding: '6px 10px',
                       borderRadius: 999,
-                      border: '1px solid #ccc',
-                      background: '#dff5e7',
-                      color: '#111',
+                      border: '1px solid rgba(34,197,94,0.35)',
+                      background: 'rgba(34,197,94,0.10)',
+                      color: '#e5e7eb',
+                      letterSpacing: '0.06em',
                     }}
                   >
                     HUMAN
                   </div>
                 </div>
 
-                <div style={{ marginTop: 8, fontSize: 13, color: '#333' }}>
+                <div className="subtle" style={{ marginTop: 10 }}>
                   Team:{' '}
                   {teamId ? (
                     <Link
                       href={`/teams/${teamId}`}
                       onClick={(e) => e.stopPropagation()}
-                      style={{ color: '#111', fontWeight: 900, textDecoration: 'underline' }}
+                      style={{
+                        color: '#e5e7eb',
+                        fontWeight: 950,
+                        textDecoration: 'none',
+                        borderBottom: '1px solid rgba(96,165,250,0.45)',
+                      }}
                     >
                       {teamName}
                     </Link>
                   ) : (
-                    <span style={{ fontWeight: 900, color: '#111' }}>{teamName}</span>
+                    <span style={{ fontWeight: 950, color: '#e5e7eb' }}>{teamName}</span>
                   )}
                 </div>
 
-                <div style={{ marginTop: 10, fontSize: 12, color: '#333', fontWeight: 800 }}>
+                <div className="subtle" style={{ marginTop: 12, fontWeight: 950 }}>
                   View profile →
                 </div>
               </div>
@@ -245,6 +247,7 @@ export default function DriversPage() {
     </>
   )
 }
+
 
 
 
