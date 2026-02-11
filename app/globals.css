@@ -1,26 +1,121 @@
-@import "tailwindcss";
-
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Core */
+  --bg: #0b0f19;               /* deep navy */
+  --bg2: #070a12;              /* darker */
+  --card: rgba(255,255,255,0.06);
+  --card2: rgba(255,255,255,0.09);
+  --text: #e5e7eb;
+  --muted: rgba(229,231,235,0.72);
+  --border: rgba(255,255,255,0.12);
+  --border2: rgba(255,255,255,0.18);
+  --shadow: 0 18px 40px rgba(0,0,0,0.40);
+  --shadow-sm: 0 10px 24px rgba(0,0,0,0.30);
+
+  /* Accents (racing vibe) */
+  --accent: #22c55e;           /* neon green */
+  --accent2: #60a5fa;          /* electric blue */
+  --danger: #ef4444;           /* red */
+  --ring: rgba(96,165,250,0.35);
+
+  /* Links */
+  --link: #e5e7eb;
+  --linkHover: #60a5fa;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(96,165,250,0.18), transparent 60%),
+    radial-gradient(900px 500px at 95% 0%, rgba(34,197,94,0.12), transparent 55%),
+    linear-gradient(180deg, var(--bg2), var(--bg));
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  line-height: 1.35;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
+a { color: var(--link); }
+a:hover { color: var(--linkHover); }
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.card {
+  background: linear-gradient(180deg, var(--card2), var(--card));
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-sm);
+}
+
+.cardPad { padding: 16px; }
+
+.h1 {
+  font-size: 32px;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  margin: 0 0 10px;
+}
+
+.subtle { color: var(--muted); font-weight: 700; }
+
+.input {
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+  outline: none;
+}
+
+.input::placeholder { color: rgba(229,231,235,0.55); }
+
+.input:focus {
+  box-shadow: 0 0 0 4px var(--ring);
+  border-color: rgba(96,165,250,0.45);
+}
+
+.button {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: linear-gradient(180deg, rgba(34,197,94,0.22), rgba(34,197,94,0.10));
+  color: var(--text);
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.button:hover {
+  border-color: rgba(34,197,94,0.35);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.th {
+  text-align: left;
+  font-weight: 950;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.06);
+  border-bottom: 1px solid var(--border);
+}
+
+.td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.rowHover:hover {
+  background: rgba(96,165,250,0.07);
+}
+
