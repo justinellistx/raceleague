@@ -67,8 +67,7 @@ export default function RaceResultsPage() {
 
       const raceId = raceData.id as string
 
-      // 3) Raw results (assumes iracing_results_raw has person_id FK to people)
-      // NOTE: We derive AI/Human from people.is_human (AI = NOT is_human)
+      // 3) Raw results
       const { data: raw, error: rawErr } = await supabase
         .from('iracing_results_raw')
         .select(
@@ -89,15 +88,15 @@ export default function RaceResultsPage() {
         return
       }
 
-      // 4) Points (if computed). If none yet, points show as '-'
+      // 4) Points (optional)
       const { data: pts, error: ptsErr } = await supabase
         .from('iracing_points_awarded')
         .select('total_points, people!inner(display_name)')
         .eq('race_id', raceId)
 
-      // points not existing yet is fine, but real errors we’ll show
+      // points not existing yet is fine
       if (ptsErr) {
-        // don’t hard-fail; just show '-' for points
+        // ignore and show '-' below
       }
 
       const pointsMap = new Map<string, number>()
@@ -127,54 +126,118 @@ export default function RaceResultsPage() {
   }, [eventId])
 
   return (
-    <main style={{ padding: 24, fontFamily: 'system-ui' }}>
-      <div style={{ marginBottom: 12 }}>
-        <Link href="/races">← Back to races</Link>
-      </div>
+    <>
+      <SiteNav />
 
-      <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 16 }}>{eventName}</h1>
-
-      {error && (
-        <div style={{ padding: 12, background: '#fee', border: '1px solid #f99', marginBottom: 12 }}>
-          Error: {error}
+      <main className="container">
+        <div style={{ marginBottom: 12 }}>
+          <Link
+            href="/races"
+            style={{
+              textDecoration: 'none',
+              fontWeight: 950,
+              padding: '10px 12px',
+              borderRadius: 12,
+              border: '1px solid rgba(255,255,255,0.14)',
+              background: 'rgba(255,255,255,0.06)',
+              display: 'inline-block',
+              color: '#e5e7eb',
+            }}
+          >
+            ← Back to races
+          </Link>
         </div>
-      )}
 
-      {!error && rows.length === 0 && (
-        <p style={{ color: '#666' }}>
-          No results posted for this race yet (or no race session created for this event).
-        </p>
-      )}
+        <h1 className="h1" style={{ marginBottom: 8 }}>
+          {eventName}
+        </h1>
 
-      {rows.length > 0 && (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ textAlign: 'left' }}>
-              <th style={{ borderBottom: '1px solid #ddd', padding: 8 }}>Pos</th>
-              <th style={{ borderBottom: '1px solid #ddd', padding: 8 }}>Driver</th>
-              <th style={{ borderBottom: '1px solid #ddd', padding: 8 }}>AI?</th>
-              <th style={{ borderBottom: '1px solid #ddd', padding: 8 }}>Start</th>
-              <th style={{ borderBottom: '1px solid #ddd', padding: 8 }}>Laps Led</th>
-              <th style={{ borderBottom: '1px solid #ddd', padding: 8 }}>Inc</th>
-              <th style={{ borderBottom: '1px solid #ddd', padding: 8 }}>Points</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => (
-              <tr key={`${r.display_name}-${i}`}>
-                <td style={{ borderBottom: '1px solid #f0f0f0', padding: 8 }}>{r.finish_position}</td>
-                <td style={{ borderBottom: '1px solid #f0f0f0', padding: 8 }}>{r.display_name}</td>
-                <td style={{ borderBottom: '1px solid #f0f0f0', padding: 8 }}>{r.is_ai ? 'Yes' : 'No'}</td>
-                <td style={{ borderBottom: '1px solid #f0f0f0', padding: 8 }}>{r.start_position ?? '-'}</td>
-                <td style={{ borderBottom: '1px solid #f0f0f0', padding: 8 }}>{r.laps_led ?? 0}</td>
-                <td style={{ borderBottom: '1px solid #f0f0f0', padding: 8 }}>{r.incidents ?? 0}</td>
-                <td style={{ borderBottom: '1px solid #f0f0f0', padding: 8 }}>{r.points ?? '-'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </main>
+        {!error && (
+          <div className="subtle" style={{ marginBottom: 16 }}>
+            Results update automatically when a race session + raw results exist.
+          </div>
+        )}
+
+        {error && (
+          <div
+            className="card cardPad"
+            style={{
+              borderColor: 'rgba(239,68,68,0.35)',
+              background: 'rgba(239,68,68,0.10)',
+              marginBottom: 12,
+            }}
+          >
+            <b>Error:</b> {error}
+          </div>
+        )}
+
+        {!error && rows.length === 0 && (
+          <div className="card cardPad">
+            <div className="subtle" style={{ fontWeight: 900 }}>
+              No results posted for this race yet (or no race session created for this event).
+            </div>
+          </div>
+        )}
+
+        {rows.length > 0 && (
+          <div className="card" style={{ overflow: 'hidden' }}>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th className="th">Pos</th>
+                  <th className="th">Driver</th>
+                  <th className="th">AI?</th>
+                  <th className="th">Start</th>
+                  <th className="th">Laps Led</th>
+                  <th className="th">Inc</th>
+                  <th className="th" style={{ textAlign: 'right' }}>
+                    Points
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r, i) => {
+                  const isP1 = r.finish_position === 1
+                  const isP2 = r.finish_position === 2
+                  const isP3 = r.finish_position === 3
+
+                  return (
+                    <tr
+                      key={`${r.display_name}-${i}`}
+                      className="rowHover"
+                      style={{
+                        background: isP1
+                          ? 'rgba(34,197,94,0.10)'
+                          : isP2
+                          ? 'rgba(96,165,250,0.10)'
+                          : isP3
+                          ? 'rgba(239,68,68,0.08)'
+                          : 'transparent',
+                      }}
+                    >
+                      <td className="td" style={{ fontWeight: 950 }}>
+                        {r.finish_position}
+                      </td>
+                      <td className="td" style={{ fontWeight: 900 }}>
+                        {r.display_name}
+                      </td>
+                      <td className="td">{r.is_ai ? 'Yes' : 'No'}</td>
+                      <td className="td">{r.start_position ?? '-'}</td>
+                      <td className="td">{r.laps_led ?? 0}</td>
+                      <td className="td">{r.incidents ?? 0}</td>
+                      <td className="td" style={{ textAlign: 'right', fontWeight: 950 }}>
+                        {r.points ?? '-'}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </main>
+    </>
   )
 }
+
 
