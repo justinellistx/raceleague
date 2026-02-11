@@ -162,7 +162,7 @@ export default function DriversPage() {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center', minWidth: 0 }}>
-                    <Avatar personId={d.id} displayName={driverName} size={44} />
+                    <Avatar personId={d.id} displayName={driverName} size={28} />
                     <div style={{ minWidth: 0 }}>
                       <div
                         style={{
