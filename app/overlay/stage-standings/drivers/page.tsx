@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { supabase } from '@/lib/supabaseClient'
+import { getSupabase } from '@/lib/supabaseClient'
 
 type Row = { pos: number; driver: string; pts: number }
 
@@ -19,6 +19,8 @@ export default function OverlayStageStandingsDrivers() {
     setError(null)
     setTitle(`STAGE ${stage} STANDINGS`)
 
+    const supabase = getSupabase() // ✅ THIS WAS MISSING
+
     // humans
     const { data: humans, error: hErr } = await supabase
       .from('people')
@@ -26,6 +28,7 @@ export default function OverlayStageStandingsDrivers() {
       .eq('is_human', true)
 
     if (hErr) return setError(hErr.message)
+
     const humanIds = new Set((humans ?? []).map((r: any) => r.id))
 
     const { data, error: e } = await supabase
@@ -52,7 +55,6 @@ export default function OverlayStageStandingsDrivers() {
     load()
     const t = setInterval(load, 6000)
     return () => clearInterval(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage])
 
   return (
@@ -73,3 +75,4 @@ export default function OverlayStageStandingsDrivers() {
     </main>
   )
 }
+
