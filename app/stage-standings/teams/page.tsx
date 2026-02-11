@@ -6,10 +6,9 @@ import SiteNav from '@/app/components/SiteNav'
 import { supabase } from '@/lib/supabaseClient'
 
 type Row = {
-  season_id: string
-  stage_number: number | null
   team_id: string
   team: string | null
+  stage_number: number | null
   team_stage_points: number | string | null
 }
 
@@ -30,7 +29,7 @@ export default function TeamStageStandingsPage() {
 
       const { data, error: e } = await supabase
         .from('v_iracing_team_stage_standings')
-        .select('season_id, stage_number, team_id, team, team_stage_points')
+        .select('team_id, team, stage_number, team_stage_points')
         .eq('stage_number', stage)
         .order('team_stage_points', { ascending: false })
 
@@ -50,112 +49,109 @@ export default function TeamStageStandingsPage() {
   return (
     <>
       <SiteNav />
-      <main
-        style={{
-          padding: 24,
-          fontFamily: 'system-ui',
-          background: '#f6f7f9',
-          minHeight: '100vh',
-          color: '#111',
-        }}
-      >
-        <h1 style={{ fontSize: 28, fontWeight: 950, marginBottom: 10 }}>Team Stage Standings</h1>
 
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
-          <label style={{ fontWeight: 900, alignSelf: 'center' }}>Stage</label>
+      <main className="container">
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'baseline' }}>
+          <div>
+            <h1 className="h1" style={{ marginBottom: 6 }}>Team Stage Standings</h1>
+            <div className="subtle">Team points by stage (preseason safe)</div>
+          </div>
+
+          <Link
+            href="/stage-standings"
+            style={{
+              textDecoration: 'none',
+              fontWeight: 950,
+              padding: '10px 12px',
+              borderRadius: 12,
+              border: '1px solid rgba(255,255,255,0.14)',
+              background: 'rgba(255,255,255,0.06)',
+              display: 'inline-block',
+              color: '#e5e7eb',
+            }}
+          >
+            ← Back
+          </Link>
+        </div>
+
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 14, marginBottom: 12 }}>
+          <label className="subtle" style={{ fontWeight: 950, alignSelf: 'center' }}>Stage</label>
           <input
             type="number"
             min={1}
             value={stage}
             onChange={(e) => setStage(Number(e.target.value || 1))}
-            style={{
-              width: 90,
-              padding: '10px 12px',
-              borderRadius: 10,
-              border: '1px solid #ddd',
-              background: '#fff',
-              color: '#111',
-            }}
+            className="input"
+            style={{ width: 90, fontWeight: 900 }}
           />
 
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search team..."
-            style={{
-              width: 320,
-              padding: '10px 12px',
-              borderRadius: 10,
-              border: '1px solid #ddd',
-              background: '#fff',
-              color: '#111',
-            }}
+            className="input"
+            style={{ width: 320, fontWeight: 900 }}
           />
 
-          <div style={{ fontWeight: 900, color: '#374151', alignSelf: 'center' }}>
+          <div className="subtle" style={{ fontWeight: 950, alignSelf: 'center' }}>
             {filtered.length} rows
           </div>
         </div>
 
         {error && (
           <div
+            className="card cardPad"
             style={{
-              padding: 12,
-              background: '#fee',
-              border: '1px solid #f99',
-              borderRadius: 12,
+              borderColor: 'rgba(239,68,68,0.35)',
+              background: 'rgba(239,68,68,0.10)',
               marginBottom: 12,
-              color: '#111',
             }}
           >
-            Error: {error}
+            <b>Error:</b> {error}
           </div>
         )}
 
         {filtered.length === 0 && !error ? (
-          <div style={{ opacity: 0.75, fontWeight: 800 }}>No team stage standings yet (preseason).</div>
-        ) : (
-          <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '70px 1fr 160px',
-                padding: '12px 14px',
-                fontWeight: 950,
-                background: '#f3f4f6',
-              }}
-            >
-              <div>Pos</div>
-              <div>Team</div>
-              <div style={{ textAlign: 'right' }}>Stage Pts</div>
+          <div className="card cardPad">
+            <div className="subtle" style={{ fontWeight: 900 }}>
+              No team stage standings yet (preseason).
             </div>
-
-            {filtered.map((r, idx) => (
-              <div
-                key={`${r.team_id}-${idx}`}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '70px 1fr 160px',
-                  padding: '12px 14px',
-                  borderTop: '1px solid #eee',
-                  alignItems: 'center',
-                }}
-              >
-                <div style={{ fontWeight: 950 }}>{idx + 1}</div>
-
-                <div style={{ fontWeight: 900 }}>
-                  <Link href={`/teams/${r.team_id}`} style={{ color: '#111', textDecoration: 'underline' }}>
-                    {r.team ?? 'Team'}
-                  </Link>
-                </div>
-
-                <div style={{ textAlign: 'right', fontWeight: 950 }}>{toNumber(r.team_stage_points)}</div>
-              </div>
-            ))}
+          </div>
+        ) : (
+          <div className="card" style={{ overflow: 'hidden' }}>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th className="th">Pos</th>
+                  <th className="th">Team</th>
+                  <th className="th" style={{ textAlign: 'right' }}>Points</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((r, idx) => (
+                  <tr key={`${r.team_id}-${idx}`} className="rowHover">
+                    <td className="td" style={{ fontWeight: 950 }}>{idx + 1}</td>
+                    <td className="td" style={{ fontWeight: 950 }}>
+                      {r.team ? (
+                        <Link href={`/teams/${r.team_id}`} style={{ fontWeight: 950, textDecoration: 'none' }}>
+                          {r.team}
+                        </Link>
+                      ) : (
+                        'Team'
+                      )}
+                    </td>
+                    <td className="td" style={{ textAlign: 'right', fontWeight: 950 }}>
+                      {toNumber(r.team_stage_points)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </main>
     </>
   )
 }
+
 
