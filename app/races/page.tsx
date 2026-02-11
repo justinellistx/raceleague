@@ -33,38 +33,85 @@ export default function RacesPage() {
   }, [])
 
   return (
-    <main style={{ padding: 24, fontFamily: 'system-ui' }}>
-      <h1 style={{ fontSize: 28, fontWeight: 900, marginBottom: 16 }}>
-        Race Schedule & Results
-      </h1>
+    <>
+      <SiteNav />
 
-      {error && <div style={{ color: 'red' }}>Error: {error}</div>}
-
-      {rows.map((e) => (
-        <div
-          key={e.id}
-          style={{
-            padding: 12,
-            border: '1px solid #eee',
-            borderRadius: 12,
-            marginBottom: 10,
-          }}
-        >
-          <div style={{ fontWeight: 900 }}>
-            Race {String(e.race_number ?? 0).padStart(2, '0')}: {e.name ?? 'TBD'}
-          </div>
-
-          <div style={{ color: '#666', marginTop: 4 }}>
-            Stage {e.stage_number ?? '—'} • {e.location ?? 'TBD'} • {e.event_date ?? 'TBD'}
-          </div>
-
-          <div style={{ marginTop: 8 }}>
-            <Link href={`/races/${e.id}`}>View results →</Link>
-          </div>
+      <main className="container">
+        <h1 className="h1">Race Schedule & Results</h1>
+        <div className="subtle" style={{ marginBottom: 16 }}>
+          Schedule, locations, and results links. (Preseason safe)
         </div>
-      ))}
-    </main>
+
+        {error && (
+          <div
+            className="card cardPad"
+            style={{
+              borderColor: 'rgba(239,68,68,0.35)',
+              background: 'rgba(239,68,68,0.10)',
+              marginBottom: 12,
+            }}
+          >
+            <b>Error:</b> {error}
+          </div>
+        )}
+
+        {rows.length === 0 && !error ? (
+          <div className="subtle" style={{ fontWeight: 900 }}>
+            No events yet.
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gap: 12 }}>
+            {rows.map((e) => (
+              <div key={e.id} className="card cardPad">
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                  <div style={{ fontWeight: 950, fontSize: 16 }}>
+                    Race {String(e.race_number ?? 0).padStart(2, '0')}: {e.name ?? 'TBD'}
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 950,
+                      padding: '6px 10px',
+                      borderRadius: 999,
+                      border: '1px solid rgba(96,165,250,0.35)',
+                      background: 'rgba(96,165,250,0.10)',
+                      color: '#e5e7eb',
+                    }}
+                  >
+                    Stage {e.stage_number ?? '—'}
+                  </div>
+                </div>
+
+                <div className="subtle" style={{ marginTop: 8 }}>
+                  {e.location ?? 'TBD'} • {e.event_date ?? 'TBD'}
+                </div>
+
+                <div style={{ marginTop: 12 }}>
+                  <Link
+                    href={`/races/${e.id}`}
+                    style={{
+                      textDecoration: 'none',
+                      fontWeight: 950,
+                      padding: '10px 12px',
+                      borderRadius: 12,
+                      border: '1px solid rgba(255,255,255,0.14)',
+                      background: 'rgba(255,255,255,0.06)',
+                      display: 'inline-block',
+                      color: '#e5e7eb',
+                    }}
+                  >
+                    View results →
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+    </>
   )
 }
+
 
 
