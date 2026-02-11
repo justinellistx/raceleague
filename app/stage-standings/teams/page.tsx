@@ -1,15 +1,21 @@
 'use client'
-// Team Stage Standings (v_iracing_team_stage_standings)
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import SiteNav from '@/app/components/SiteNav'
 import { supabase } from '@/lib/supabaseClient'
 
 type Row = {
-  team_id: string
-  name: string | null
+  season_id: string
   stage_number: number | null
-  stage_points_counted: number | null
+  team_id: string
+  team: string | null
+  team_stage_points: number | string | null
+}
+
+function toNumber(v: any): number {
+  const n = Number(v)
+  return Number.isFinite(n) ? n : 0
 }
 
 export default function TeamStageStandingsPage() {
@@ -24,9 +30,9 @@ export default function TeamStageStandingsPage() {
 
       const { data, error: e } = await supabase
         .from('v_iracing_team_stage_standings')
-        .select('team_id, name, stage_number, stage_points_counted')
+        .select('season_id, stage_number, team_id, team, team_stage_points')
         .eq('stage_number', stage)
-        .order('stage_points_counted', { ascending: false })
+        .order('team_stage_points', { ascending: false })
 
       if (e) return setError(e.message)
       setRows((data ?? []) as Row[])
@@ -38,13 +44,21 @@ export default function TeamStageStandingsPage() {
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase()
     if (!needle) return rows
-    return rows.filter((r) => (r.name ?? '').toLowerCase().includes(needle))
+    return rows.filter((r) => (r.team ?? '').toLowerCase().includes(needle))
   }, [rows, q])
 
   return (
     <>
       <SiteNav />
-      <main style={{ padding: 24, fontFamily: 'system-ui', background: '#f6f7f9', minHeight: '100vh', color: '#111' }}>
+      <main
+        style={{
+          padding: 24,
+          fontFamily: 'system-ui',
+          background: '#f6f7f9',
+          minHeight: '100vh',
+          color: '#111',
+        }}
+      >
         <h1 style={{ fontSize: 28, fontWeight: 950, marginBottom: 10 }}>Team Stage Standings</h1>
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
@@ -54,14 +68,28 @@ export default function TeamStageStandingsPage() {
             min={1}
             value={stage}
             onChange={(e) => setStage(Number(e.target.value || 1))}
-            style={{ width: 90, padding: '10px 12px', borderRadius: 10, border: '1px solid #ddd', background: '#fff' }}
+            style={{
+              width: 90,
+              padding: '10px 12px',
+              borderRadius: 10,
+              border: '1px solid #ddd',
+              background: '#fff',
+              color: '#111',
+            }}
           />
 
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search team..."
-            style={{ width: 320, padding: '10px 12px', borderRadius: 10, border: '1px solid #ddd', background: '#fff' }}
+            style={{
+              width: 320,
+              padding: '10px 12px',
+              borderRadius: 10,
+              border: '1px solid #ddd',
+              background: '#fff',
+              color: '#111',
+            }}
           />
 
           <div style={{ fontWeight: 900, color: '#374151', alignSelf: 'center' }}>
@@ -70,7 +98,16 @@ export default function TeamStageStandingsPage() {
         </div>
 
         {error && (
-          <div style={{ padding: 12, background: '#fee', border: '1px solid #f99', borderRadius: 12, marginBottom: 12 }}>
+          <div
+            style={{
+              padding: 12,
+              background: '#fee',
+              border: '1px solid #f99',
+              borderRadius: 12,
+              marginBottom: 12,
+              color: '#111',
+            }}
+          >
             Error: {error}
           </div>
         )}
@@ -101,13 +138,18 @@ export default function TeamStageStandingsPage() {
                   gridTemplateColumns: '70px 1fr 160px',
                   padding: '12px 14px',
                   borderTop: '1px solid #eee',
+                  alignItems: 'center',
                 }}
               >
                 <div style={{ fontWeight: 950 }}>{idx + 1}</div>
-                <div style={{ fontWeight: 900 }}>{r.name ?? 'Team'}</div>
-                <div style={{ textAlign: 'right', fontWeight: 950 }}>
-                  {Number(r.stage_points_counted ?? 0)}
+
+                <div style={{ fontWeight: 900 }}>
+                  <Link href={`/teams/${r.team_id}`} style={{ color: '#111', textDecoration: 'underline' }}>
+                    {r.team ?? 'Team'}
+                  </Link>
                 </div>
+
+                <div style={{ textAlign: 'right', fontWeight: 950 }}>{toNumber(r.team_stage_points)}</div>
               </div>
             ))}
           </div>
