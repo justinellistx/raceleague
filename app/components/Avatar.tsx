@@ -73,6 +73,8 @@ export default function Avatar({
           priority={priority}
           onError={() => setImgError(true)}
           className="object-cover"
+          quality={95}
+
         />
       ) : (
         <div className="grid h-full w-full place-items-center text-white/80 font-semibold">

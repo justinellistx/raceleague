@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import SiteNav from '@/app/components/SiteNav'
 import Avatar from '@/app/components/Avatar'
@@ -24,8 +23,6 @@ type TeamMember = {
 }
 
 export default function DriversPage() {
-  const router = useRouter()
-
   const [drivers, setDrivers] = useState<Person[]>([])
   const [teams, setTeams] = useState<Team[]>([])
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
@@ -45,15 +42,12 @@ export default function DriversPage() {
         .order('display_name', { ascending: true })
 
       if (cancelled) return
-      if (peopleErr) {
-        setError(peopleErr.message)
-        return
-      }
+      if (peopleErr) return setError(peopleErr.message)
 
-      const cleaned: Person[] = (people ?? []).filter(
-        (p: unknown): p is Person =>
-          typeof (p as Person)?.id === 'string'
-      )
+      const cleaned = (people ?? []).filter((p) => {
+        const obj = p as { id?: unknown }
+        return typeof obj.id === 'string'
+      }) as Person[]
       setDrivers(cleaned)
 
       const { data: t, error: tErr } = await supabase
@@ -62,10 +56,7 @@ export default function DriversPage() {
         .order('name', { ascending: true })
 
       if (cancelled) return
-      if (tErr) {
-        setError(tErr.message)
-        return
-      }
+      if (tErr) return setError(tErr.message)
       setTeams((t ?? []) as Team[])
 
       const { data: tm, error: tmErr } = await supabase
@@ -73,15 +64,11 @@ export default function DriversPage() {
         .select('team_id, person_id')
 
       if (cancelled) return
-      if (tmErr) {
-        setError(tmErr.message)
-        return
-      }
+      if (tmErr) return setError(tmErr.message)
       setTeamMembers((tm ?? []) as TeamMember[])
     }
 
     load()
-
     return () => {
       cancelled = true
     }
@@ -93,19 +80,11 @@ export default function DriversPage() {
     return map
   }, [teams])
 
-  const teamIdByPersonId = useMemo(() => {
-    const map = new Map<string, string>()
-    for (const m of teamMembers) {
-      if (m.person_id && m.team_id) map.set(m.person_id, m.team_id)
-    }
-    return map
-  }, [teamMembers])
-
   const teamNameByPersonId = useMemo(() => {
     const map = new Map<string, string>()
     for (const m of teamMembers) {
       const t = teamById.get(m.team_id)
-      map.set(m.person_id, t?.name ?? 'Team')
+      map.set(m.person_id, t?.name ?? '—')
     }
     return map
   }, [teamMembers, teamById])
@@ -118,11 +97,6 @@ export default function DriversPage() {
 
     return [...list].sort((a, b) => (a.display_name ?? '').localeCompare(b.display_name ?? ''))
   }, [drivers, q])
-
-  const goToDriver = (id: string) => {
-    // Your profile route is /driver/[personId] (singular)
-    router.push(`/driver/${id}`)
-  }
 
   return (
     <>
@@ -168,28 +142,24 @@ export default function DriversPage() {
           }}
         >
           {filtered.map((d) => {
-            const teamId = teamIdByPersonId.get(d.id) ?? null
-            const teamName = teamNameByPersonId.get(d.id) ?? '—'
             const driverName = d.display_name ?? 'Unknown'
+            const teamName = teamNameByPersonId.get(d.id) ?? '—'
 
             return (
-              <div
+              <Link
                 key={d.id}
+                href={`/drivers/${d.id}`}
                 className="card"
-                role="button"
-                tabIndex={0}
-                onClick={() => goToDriver(d.id)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') goToDriver(d.id)
-                }}
                 style={{
-                  cursor: 'pointer',
+                  display: 'block',
                   padding: 16,
                   borderRadius: 18,
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  cursor: 'pointer',
                   background: 'linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.06))',
                 }}
               >
-                {/* top row */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center', minWidth: 0 }}>
                     <Avatar personId={d.id} displayName={driverName} size={44} />
@@ -206,10 +176,7 @@ export default function DriversPage() {
                         {driverName}
                       </div>
                       <div className="subtle" style={{ marginTop: 2, fontSize: 12 }}>
-                        ID:{' '}
-                        <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
-                          {d.id.slice(0, 8)}…
-                        </span>
+                        Team: <span style={{ fontWeight: 950, color: '#e5e7eb' }}>{teamName}</span>
                       </div>
                     </div>
                   </div>
@@ -231,31 +198,10 @@ export default function DriversPage() {
                   </span>
                 </div>
 
-                {/* team row */}
-                <div className="subtle" style={{ marginTop: 12 }}>
-                  Team:{' '}
-                  {teamId ? (
-                    <Link
-                      href={`/teams/${teamId}`}
-                      onClick={(e) => e.stopPropagation()}
-                      style={{
-                        color: '#e5e7eb',
-                        fontWeight: 950,
-                        textDecoration: 'none',
-                        borderBottom: '1px solid rgba(96,165,250,0.45)',
-                      }}
-                    >
-                      {teamName}
-                    </Link>
-                  ) : (
-                    <span style={{ fontWeight: 950, color: '#e5e7eb' }}>{teamName}</span>
-                  )}
-                </div>
-
                 <div className="subtle" style={{ marginTop: 12, fontWeight: 950 }}>
                   View profile →
                 </div>
-              </div>
+              </Link>
             )
           })}
         </div>
@@ -263,6 +209,7 @@ export default function DriversPage() {
     </>
   )
 }
+
 
 
 
