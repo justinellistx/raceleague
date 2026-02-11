@@ -20,6 +20,12 @@
   /* Links */
   --link: #e5e7eb;
   --linkHover: #60a5fa;
+
+  /* Extras */
+  --radius: 18px;
+  --radius-sm: 12px;
+  --glass: rgba(255,255,255,0.06);
+  --glass2: rgba(255,255,255,0.10);
 }
 
 * { box-sizing: border-box; }
@@ -27,48 +33,92 @@ html, body { height: 100%; }
 
 body {
   margin: 0;
-  background:
-    radial-gradient(1200px 600px at 15% -10%, rgba(96,165,250,0.18), transparent 60%),
-    radial-gradient(900px 500px at 95% 0%, rgba(34,197,94,0.12), transparent 55%),
-    linear-gradient(180deg, var(--bg2), var(--bg));
   color: var(--text);
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
   line-height: 1.35;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Broadcast background: gradient + carbon + scanlines */
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(96,165,250,0.20), transparent 60%),
+    radial-gradient(900px 500px at 95% 0%, rgba(34,197,94,0.14), transparent 55%),
+    radial-gradient(800px 420px at 50% 100%, rgba(239,68,68,0.08), transparent 60%),
+    linear-gradient(180deg, var(--bg2), var(--bg));
+
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+    "Apple Color Emoji", "Segoe UI Emoji";
 }
 
+body::before {
+  /* carbon fiber-ish texture */
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.14;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.06) 25%, transparent 25%) 0 0 / 18px 18px,
+    linear-gradient(225deg, rgba(255,255,255,0.06) 25%, transparent 25%) 0 0 / 18px 18px,
+    linear-gradient(315deg, rgba(255,255,255,0.04) 25%, transparent 25%) 0 0 / 18px 18px,
+    linear-gradient(45deg, rgba(255,255,255,0.04) 25%, transparent 25%) 0 0 / 18px 18px;
+  mix-blend-mode: overlay;
+}
+
+body::after {
+  /* subtle scanlines */
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.10;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255,255,255,0.05),
+    rgba(255,255,255,0.05) 1px,
+    transparent 1px,
+    transparent 5px
+  );
+}
+
+/* Links */
 a { color: var(--link); }
 a:hover { color: var(--linkHover); }
 
+/* Layout */
 .container {
   max-width: 1100px;
   margin: 0 auto;
   padding: 24px;
 }
 
+/* Cards */
 .card {
-  background: linear-gradient(180deg, var(--card2), var(--card));
+  background:
+    linear-gradient(180deg, var(--card2), var(--card));
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(10px);
 }
 
 .cardPad { padding: 16px; }
 
+/* Headings */
 .h1 {
   font-size: 32px;
   font-weight: 950;
   letter-spacing: -0.02em;
   margin: 0 0 10px;
+  text-shadow: 0 2px 18px rgba(0,0,0,0.45);
 }
 
-.subtle { color: var(--muted); font-weight: 700; }
+.subtle { color: var(--muted); font-weight: 750; }
 
+/* Inputs */
 .input {
   height: 40px;
   padding: 0 12px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.06);
   color: var(--text);
@@ -79,24 +129,34 @@ a:hover { color: var(--linkHover); }
 
 .input:focus {
   box-shadow: 0 0 0 4px var(--ring);
-  border-color: rgba(96,165,250,0.45);
+  border-color: rgba(96,165,250,0.50);
 }
 
+/* Buttons */
 .button {
   height: 40px;
   padding: 0 14px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   border: 1px solid rgba(255,255,255,0.14);
-  background: linear-gradient(180deg, rgba(34,197,94,0.22), rgba(34,197,94,0.10));
+  background:
+    linear-gradient(180deg, rgba(34,197,94,0.26), rgba(34,197,94,0.12));
   color: var(--text);
   font-weight: 950;
   cursor: pointer;
+  box-shadow: 0 12px 22px rgba(0,0,0,0.25);
+  transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
 }
 
 .button:hover {
-  border-color: rgba(34,197,94,0.35);
+  transform: translateY(-1px);
+  border-color: rgba(34,197,94,0.40);
 }
 
+.button:active {
+  transform: translateY(0px);
+}
+
+/* Tables */
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -108,6 +168,7 @@ a:hover { color: var(--linkHover); }
   padding: 12px 14px;
   background: rgba(255,255,255,0.06);
   border-bottom: 1px solid var(--border);
+  letter-spacing: 0.01em;
 }
 
 .td {
@@ -116,6 +177,86 @@ a:hover { color: var(--linkHover); }
 }
 
 .rowHover:hover {
-  background: rgba(96,165,250,0.07);
+  background: rgba(96,165,250,0.08);
 }
+
+/* --- Optional “broadcast” helpers (use when you want) --- */
+
+.divider {
+  height: 1px;
+  background: rgba(255,255,255,0.10);
+  margin: 14px 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.06);
+  font-weight: 950;
+  font-size: 12px;
+}
+
+.badgeAccent {
+  border-color: rgba(34,197,94,0.35);
+  background: rgba(34,197,94,0.12);
+}
+
+.badgeBlue {
+  border-color: rgba(96,165,250,0.35);
+  background: rgba(96,165,250,0.12);
+}
+
+.badgeDanger {
+  border-color: rgba(239,68,68,0.35);
+  background: rgba(239,68,68,0.12);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.06);
+  font-weight: 900;
+  font-size: 12px;
+}
+
+.kpi {
+  display: grid;
+  gap: 6px;
+}
+.kpiLabel { color: var(--muted); font-weight: 800; font-size: 12px; }
+.kpiValue { font-weight: 950; font-size: 22px; }
+
+/* Nav shell helpers (if you want SiteNav to look extra broadcasty) */
+.navShell {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(10px);
+  background: linear-gradient(180deg, rgba(7,10,18,0.78), rgba(7,10,18,0.32));
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+}
+.navInner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.gridAuto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
 
