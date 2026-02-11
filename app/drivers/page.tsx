@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import SiteNav from '@/app/components/SiteNav'
+import Avatar from '@/app/components/Avatar'
 
 type Person = {
   id: string
@@ -32,23 +33,26 @@ export default function DriversPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    let cancelled = false
+
     const load = async () => {
       setError(null)
 
-      // Humans only (hide AI)
       const { data: people, error: peopleErr } = await supabase
         .from('people')
         .select('id, display_name, is_human')
         .eq('is_human', true)
         .order('display_name', { ascending: true })
 
+      if (cancelled) return
       if (peopleErr) {
         setError(peopleErr.message)
         return
       }
 
       const cleaned: Person[] = (people ?? []).filter(
-        (p: any): p is Person => typeof p?.id === 'string'
+        (p: unknown): p is Person =>
+          typeof (p as Person)?.id === 'string'
       )
       setDrivers(cleaned)
 
@@ -57,6 +61,7 @@ export default function DriversPage() {
         .select('id, name')
         .order('name', { ascending: true })
 
+      if (cancelled) return
       if (tErr) {
         setError(tErr.message)
         return
@@ -67,6 +72,7 @@ export default function DriversPage() {
         .from('team_members')
         .select('team_id, person_id')
 
+      if (cancelled) return
       if (tmErr) {
         setError(tmErr.message)
         return
@@ -75,30 +81,32 @@ export default function DriversPage() {
     }
 
     load()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const teamById = useMemo(() => {
     const map = new Map<string, Team>()
-    teams.forEach((t) => map.set(t.id, t))
+    for (const t of teams) map.set(t.id, t)
     return map
   }, [teams])
 
-  // person_id -> team_id
   const teamIdByPersonId = useMemo(() => {
     const map = new Map<string, string>()
-    teamMembers.forEach((m) => {
+    for (const m of teamMembers) {
       if (m.person_id && m.team_id) map.set(m.person_id, m.team_id)
-    })
+    }
     return map
   }, [teamMembers])
 
-  // person_id -> team name
   const teamNameByPersonId = useMemo(() => {
     const map = new Map<string, string>()
-    teamMembers.forEach((m) => {
+    for (const m of teamMembers) {
       const t = teamById.get(m.team_id)
       map.set(m.person_id, t?.name ?? 'Team')
-    })
+    }
     return map
   }, [teamMembers, teamById])
 
@@ -110,6 +118,11 @@ export default function DriversPage() {
 
     return [...list].sort((a, b) => (a.display_name ?? '').localeCompare(b.display_name ?? ''))
   }, [drivers, q])
+
+  const goToDriver = (id: string) => {
+    // Your profile route is /driver/[personId] (singular)
+    router.push(`/driver/${id}`)
+  }
 
   return (
     <>
@@ -157,50 +170,51 @@ export default function DriversPage() {
           {filtered.map((d) => {
             const teamId = teamIdByPersonId.get(d.id) ?? null
             const teamName = teamNameByPersonId.get(d.id) ?? '—'
+            const driverName = d.display_name ?? 'Unknown'
 
             return (
               <div
                 key={d.id}
+                className="card"
                 role="button"
                 tabIndex={0}
-                onClick={() => router.push(`/drivers/${d.id}`)}
+                onClick={() => goToDriver(d.id)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') router.push(`/drivers/${d.id}`)
+                  if (e.key === 'Enter') goToDriver(d.id)
                 }}
-                className="card"
                 style={{
                   cursor: 'pointer',
                   padding: 16,
                   borderRadius: 18,
-                  transition: 'transform 0.12s ease, border-color 0.12s ease, background 0.12s ease',
-                }}
-                onMouseEnter={(e) => {
-                  ;(e.currentTarget as any).style.transform = 'translateY(-2px)'
-                  ;(e.currentTarget as any).style.borderColor = 'rgba(96,165,250,0.35)'
-                  ;(e.currentTarget as any).style.background =
-                    'linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.06))'
-                }}
-                onMouseLeave={(e) => {
-                  ;(e.currentTarget as any).style.transform = 'translateY(0px)'
-                  ;(e.currentTarget as any).style.borderColor = 'rgba(255,255,255,0.12)'
-                  ;(e.currentTarget as any).style.background =
-                    'linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.06))'
+                  background: 'linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.06))',
                 }}
               >
+                {/* top row */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
-                  <div
-                    style={{
-                      fontWeight: 950,
-                      fontSize: 16,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {d.display_name ?? 'Unknown'}
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center', minWidth: 0 }}>
+                    <Avatar personId={d.id} displayName={driverName} size={44} />
+                    <div style={{ minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontWeight: 950,
+                          fontSize: 16,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {driverName}
+                      </div>
+                      <div className="subtle" style={{ marginTop: 2, fontSize: 12 }}>
+                        ID:{' '}
+                        <span style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
+                          {d.id.slice(0, 8)}…
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div
+                  <span
                     style={{
                       fontSize: 11,
                       fontWeight: 950,
@@ -210,13 +224,15 @@ export default function DriversPage() {
                       background: 'rgba(34,197,94,0.10)',
                       color: '#e5e7eb',
                       letterSpacing: '0.06em',
+                      flexShrink: 0,
                     }}
                   >
                     HUMAN
-                  </div>
+                  </span>
                 </div>
 
-                <div className="subtle" style={{ marginTop: 10 }}>
+                {/* team row */}
+                <div className="subtle" style={{ marginTop: 12 }}>
                   Team:{' '}
                   {teamId ? (
                     <Link
@@ -247,6 +263,7 @@ export default function DriversPage() {
     </>
   )
 }
+
 
 
 

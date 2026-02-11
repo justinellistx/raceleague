@@ -203,7 +203,6 @@ export default function DriverProfilePage() {
   }, [stageRows])
 
   const driverName = person?.display_name ?? 'Unknown'
-  const fallbackLetter = (driverName?.[0] ?? '?').toUpperCase()
 
   return (
     <>
@@ -256,14 +255,9 @@ export default function DriverProfilePage() {
                 flexWrap: 'wrap',
               }}
             >
+              {/* left side: avatar + name */}
               <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-                <Avatar
-                  srcJpg={`/driver-photos/${personId}.jpg`}
-                  srcPng={`/driver-photos/${personId}.png`}
-                  alt={driverName}
-                  size={110}
-                  fallbackText={fallbackLetter}
-                />
+                <Avatar personId={personId} displayName={driverName} size={110} priority />
 
                 <div>
                   <div className="subtle" style={{ fontWeight: 950, letterSpacing: '0.08em' }}>
@@ -295,6 +289,7 @@ export default function DriverProfilePage() {
                 </div>
               </div>
 
+              {/* right side: chips */}
               <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                 <span
                   style={{
@@ -445,10 +440,15 @@ function StatCard({ label, value, sub }: { label: string; value: string; sub?: s
     <div className="card cardPad">
       <div style={{ fontSize: 12, color: 'rgba(229,231,235,0.72)', fontWeight: 900 }}>{label}</div>
       <div style={{ fontSize: 22, fontWeight: 950, marginTop: 8 }}>{value}</div>
-      {sub && <div className="subtle" style={{ marginTop: 6, fontSize: 12 }}>{sub}</div>}
+      {sub && (
+        <div className="subtle" style={{ marginTop: 6, fontSize: 12 }}>
+          {sub}
+        </div>
+      )}
     </div>
   )
 }
+
 
 
 

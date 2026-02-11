@@ -3,11 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
+  "dev": "next dev",
+  "prebuild": "node scripts/generate-driver-photo-manifest.mjs",
+  "build": "next build",
+  "start": "next start",
+  "lint": "eslint"
+}
+,
   "dependencies": {
     "@supabase/supabase-js": "^2.93.1",
     "next": "16.1.5",
@@ -24,4 +26,4 @@
     "tailwindcss": "^4",
     "typescript": "^5"
   }
-}
+  }

@@ -1,70 +1,88 @@
 'use client'
 
 import Image from 'next/image'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+
+type AvatarProps = {
+  personId: string
+  displayName?: string | null
+  size?: number
+  className?: string
+  priority?: boolean
+}
+
+function initials(name?: string | null) {
+  const n = (name ?? '').trim()
+  if (!n) return '?'
+  const parts = n.split(/\s+/).slice(0, 2)
+  return parts.map(p => p[0]?.toUpperCase()).join('') || '?'
+}
+
+let cachedManifest: Record<string, string> | null = null
 
 export default function Avatar({
-  srcJpg,
-  srcPng,
-  alt,
-  size = 110,
-  fallbackText = '?',
-}: {
-  srcJpg: string
-  srcPng?: string
-  alt: string
-  size?: number
-  fallbackText?: string
-}) {
-  const [src, setSrc] = useState(srcJpg)
-  const [failed, setFailed] = useState(false)
+  personId,
+  displayName,
+  size = 56,
+  className = '',
+  priority = false,
+}: AvatarProps) {
+  const [imgError, setImgError] = useState(false)
+  const [manifest, setManifest] = useState<Record<string, string> | null>(cachedManifest)
 
-  if (failed) {
-    return (
-      <div
-        style={{
-          width: size,
-          height: size,
-          borderRadius: 16,
-          background: '#fff',
-          border: '1px solid #d7d7d7',
-          boxShadow: '0 6px 16px rgba(0,0,0,0.08)',
-          display: 'grid',
-          placeItems: 'center',
-          fontWeight: 950,
-          color: '#111',
-          fontFamily: 'system-ui',
-        }}
-      >
-        {fallbackText}
-      </div>
-    )
-  }
+  useEffect(() => {
+    let cancelled = false
+    if (manifest) return
+
+    fetch('/drivers-photos/manifest.json', { cache: 'no-store' })
+      .then(r => (r.ok ? r.json() : {}))
+      .then((data) => {
+        if (cancelled) return
+        cachedManifest = data
+        setManifest(data)
+      })
+      .catch(() => {
+        if (cancelled) return
+        cachedManifest = {}
+        setManifest({})
+      })
+
+    return () => { cancelled = true }
+  }, [manifest])
+
+  const src = useMemo(() => {
+    if (!manifest) return null
+    return manifest[personId] ?? null
+  }, [manifest, personId])
+
+  const showImage = !!src && !imgError
 
   return (
     <div
-      style={{
-        width: size,
-        height: size,
-        borderRadius: 16,
-        overflow: 'hidden',
-        border: '1px solid #d7d7d7',
-        boxShadow: '0 6px 16px rgba(0,0,0,0.08)',
-        background: '#fff',
-      }}
+      className={`relative shrink-0 overflow-hidden rounded-full ring-1 ring-white/10 bg-white/5 ${className}`}
+      style={{ width: size, height: size }}
+      aria-label={displayName ?? 'Driver'}
+      title={displayName ?? 'Driver'}
     >
-      <Image
-        src={src}
-        alt={alt}
-        width={size}
-        height={size}
-        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        priority
-        onError={() => {
-          if (srcPng && src !== srcPng) setSrc(srcPng)
-          else setFailed(true)
-        }}
-      />
+      {showImage ? (
+        <Image
+          src={src}
+          alt={displayName ?? 'Driver avatar'}
+          fill
+          sizes={`${size}px`}
+          priority={priority}
+          onError={() => setImgError(true)}
+          className="object-cover"
+        />
+      ) : (
+        <div className="grid h-full w-full place-items-center text-white/80 font-semibold">
+          <span style={{ fontSize: Math.max(12, Math.floor(size * 0.35)) }}>
+            {initials(displayName)}
+          </span>
+        </div>
+      )}
     </div>
   )
 }
+
+
