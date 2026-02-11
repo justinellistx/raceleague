@@ -113,12 +113,11 @@ export default function TeamProfilePage() {
         if (cancelled) return
         if (pErr) return setError(pErr.message)
 
-        // Humans only for roster display
         const humans = (p ?? []).filter((x: any) => x?.is_human)
         setMembers(humans as Person[])
       }
 
-      // Team season standings (now using correct columns)
+      // Team season standings
       const { data: ss, error: ssErr } = await supabase
         .from('v_iracing_team_season_standings')
         .select('team_id, team, team_season_points')
@@ -126,7 +125,9 @@ export default function TeamProfilePage() {
       if (cancelled) return
       if (!ssErr) {
         const rows = (ss ?? []) as TeamSeasonStandingRow[]
-        const sorted = [...rows].sort((a, b) => toNumber(b.team_season_points) - toNumber(a.team_season_points))
+        const sorted = [...rows].sort(
+          (a, b) => toNumber(b.team_season_points) - toNumber(a.team_season_points)
+        )
         const idx = sorted.findIndex((r) => r.team_id === teamId)
         if (idx >= 0) {
           setSeasonPos(idx + 1)
@@ -136,12 +137,11 @@ export default function TeamProfilePage() {
           setSeasonPoints(null)
         }
       } else {
-        // Non-fatal: preseason or view not ready
         setSeasonPos(null)
         setSeasonPoints(null)
       }
 
-      // Team stage standings (correct columns)
+      // Team stage standings
       const { data: st, error: stErr } = await supabase
         .from('v_iracing_team_stage_standings')
         .select('season_id, stage_number, team_id, team, team_stage_points')
@@ -152,7 +152,7 @@ export default function TeamProfilePage() {
       if (!stErr) setStageRows((st ?? []) as TeamStageStandingRow[])
       else setStageRows([])
 
-      // Team race points (correct columns)
+      // Team race points
       const { data: tr, error: trErr } = await supabase
         .from('v_iracing_team_race_points')
         .select(
@@ -168,7 +168,6 @@ export default function TeamProfilePage() {
     }
 
     load()
-    // Optional: refresh periodically during race night
     const id = setInterval(load, 12000)
 
     return () => {
@@ -177,240 +176,268 @@ export default function TeamProfilePage() {
     }
   }, [teamId])
 
+  const teamDisplay = team?.name ?? 'Team'
   const memberCount = members.length
 
-  const teamDisplay = team?.name ?? 'Team'
-
   const stageSummary = useMemo(() => {
-    return stageRows.map((r) => {
-      const name = `Stage ${r.stage_number ?? '—'}`
-      const points = toNumber(r.team_stage_points)
-      return { name, points }
-    })
+    return stageRows.map((r) => ({
+      name: `Stage ${r.stage_number ?? '—'}`,
+      points: toNumber(r.team_stage_points),
+    }))
   }, [stageRows])
 
   const recentTeamRaces = useMemo(() => {
-    // “Most recent” based on stage + race number
     const sorted = [...raceRows].sort((a, b) => {
-      const aKey = (toNumber(a.stage_number) * 1000) + toNumber(a.race_number)
-      const bKey = (toNumber(b.stage_number) * 1000) + toNumber(b.race_number)
+      const aKey = toNumber(a.stage_number) * 1000 + toNumber(a.race_number)
+      const bKey = toNumber(b.stage_number) * 1000 + toNumber(b.race_number)
       return bKey - aKey
     })
     return sorted.slice(0, 10)
   }, [raceRows])
 
   return (
-    <main
-      style={{
-        padding: 24,
-        fontFamily: 'system-ui',
-        color: '#111',
-        background: '#f6f7f9',
-        minHeight: '100vh',
-      }}
-    >
-      <Link href="/teams" style={{ textDecoration: 'none', color: '#111', fontWeight: 900 }}>
-        ← Back to Teams
-      </Link>
+    <>
+      <SiteNav />
 
-      {error && (
-        <div
+      <main className="container">
+        <Link
+          href="/teams"
           style={{
-            marginTop: 12,
-            padding: 12,
-            background: '#fee',
-            border: '1px solid #f99',
+            textDecoration: 'none',
+            fontWeight: 950,
+            padding: '10px 12px',
             borderRadius: 12,
-            color: '#111',
+            border: '1px solid rgba(255,255,255,0.14)',
+            background: 'rgba(255,255,255,0.06)',
+            display: 'inline-block',
+            color: '#e5e7eb',
           }}
         >
-          Error: {error}
-        </div>
-      )}
+          ← Back to Teams
+        </Link>
 
-      {team && (
-        <>
-          <div style={{ marginTop: 14, display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-            <div>
-              <h1 style={{ margin: 0, fontSize: 32, fontWeight: 950 }}>{teamDisplay}</h1>
-              <div style={{ marginTop: 6, color: '#333' }}>
-                Human drivers on roster: <b style={{ color: '#111' }}>{memberCount}</b>
+        {error && (
+          <div
+            className="card cardPad"
+            style={{
+              marginTop: 12,
+              borderColor: 'rgba(239,68,68,0.35)',
+              background: 'rgba(239,68,68,0.10)',
+            }}
+          >
+            <b>Error:</b> {error}
+          </div>
+        )}
+
+        {team && (
+          <>
+            <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+              <div>
+                <h1 className="h1" style={{ marginBottom: 6 }}>
+                  {teamDisplay}
+                </h1>
+                <div className="subtle">
+                  Human drivers on roster: <b style={{ color: '#e5e7eb' }}>{memberCount}</b>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 10,
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 950,
+                    padding: '6px 10px',
+                    borderRadius: 999,
+                    border: '1px solid rgba(34,197,94,0.35)',
+                    background: 'rgba(34,197,94,0.10)',
+                    color: '#e5e7eb',
+                  }}
+                >
+                  ROSTER {memberCount}
+                </span>
+
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 950,
+                    padding: '6px 10px',
+                    borderRadius: 999,
+                    border: '1px solid rgba(96,165,250,0.35)',
+                    background: 'rgba(96,165,250,0.10)',
+                    color: '#e5e7eb',
+                  }}
+                >
+                  {seasonPos ? `SEASON P${seasonPos}` : 'SEASON —'}
+                </span>
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-              <Link href="/" style={{ color: '#111', textDecoration: 'underline', fontWeight: 800 }}>
-                Home
-              </Link>
-              <Link href="/drivers" style={{ color: '#111', textDecoration: 'underline', fontWeight: 800 }}>
-                Drivers
-              </Link>
-              <Link href="/teams" style={{ color: '#111', textDecoration: 'underline', fontWeight: 800 }}>
-                Teams
-              </Link>
+            {/* Stat cards */}
+            <div
+              style={{
+                marginTop: 16,
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gap: 12,
+              }}
+            >
+              <StatCard label="Season Standing" value={seasonPos ? `P${seasonPos}` : '—'} sub={`Points: ${seasonPoints ?? '—'}`} />
+              <StatCard label="Roster Size" value={`${memberCount}`} />
+              <StatCard label="Stages Tracked" value={`${stageSummary.length}`} />
             </div>
-          </div>
 
-          <div
-            style={{
-              marginTop: 16,
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-              gap: 12,
-            }}
-          >
-            <StatCard
-              label="Season Standing"
-              value={seasonPos ? `P${seasonPos}` : '—'}
-              sub={`Points: ${seasonPoints ?? '—'}`}
-            />
-            <StatCard label="Roster Size" value={`${memberCount}`} />
-            <StatCard label="Stages Tracked" value={`${stageSummary.length}`} />
-          </div>
-
-          <div
-            style={{
-              marginTop: 18,
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-              gap: 12,
-            }}
-          >
-            {/* Roster */}
-            <Panel title="Roster (Humans)">
-              {members.length === 0 ? (
-                <div style={{ color: '#333', fontWeight: 800 }}>No human drivers found for this team.</div>
-              ) : (
-                <div style={{ display: 'grid', gap: 8 }}>
-                  {members.map((m) => (
-                    <Link
-                      key={m.id}
-                      href={`/drivers/${m.id}`}
-                      style={{
-                        textDecoration: 'none',
-                        color: '#111',
-                        border: '1px solid #e1e1e1',
-                        borderRadius: 12,
-                        padding: 10,
-                        background: '#fff',
-                        display: 'block',
-                      }}
-                    >
-                      <div style={{ fontWeight: 950 }}>{m.display_name ?? 'Unknown'}</div>
-                      <div style={{ marginTop: 2, fontSize: 12, color: '#444' }}>Driver profile →</div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </Panel>
-
-            {/* Stage standings */}
-            <Panel title="Stage Standings">
-              {stageSummary.length === 0 ? (
-                <div style={{ color: '#333', fontWeight: 800 }}>
-                  No stage standings yet (or view not returning data).
-                </div>
-              ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ textAlign: 'left' }}>
-                      <th style={{ borderBottom: '1px solid #ddd', padding: 8, color: '#111' }}>Stage</th>
-                      <th style={{ borderBottom: '1px solid #ddd', padding: 8, color: '#111' }}>Points</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stageSummary.map((s, i) => (
-                      <tr key={`${s.name}-${i}`}>
-                        <td style={{ borderBottom: '1px solid #f0f0f0', padding: 8, color: '#111' }}>{s.name}</td>
-                        <td style={{ borderBottom: '1px solid #f0f0f0', padding: 8, color: '#111' }}>{s.points}</td>
-                      </tr>
+            <div
+              style={{
+                marginTop: 18,
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                gap: 12,
+              }}
+            >
+              {/* Roster */}
+              <Panel title="Roster (Humans)">
+                {members.length === 0 ? (
+                  <div className="subtle" style={{ fontWeight: 900 }}>
+                    No human drivers found for this team.
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gap: 10 }}>
+                    {members.map((m) => (
+                      <Link
+                        key={m.id}
+                        href={`/drivers/${m.id}`}
+                        style={{
+                          textDecoration: 'none',
+                          color: '#e5e7eb',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: 14,
+                          padding: 12,
+                          background: 'rgba(255,255,255,0.04)',
+                          display: 'block',
+                        }}
+                      >
+                        <div style={{ fontWeight: 950 }}>{m.display_name ?? 'Unknown'}</div>
+                        <div className="subtle" style={{ marginTop: 4, fontSize: 12 }}>
+                          Driver profile →
+                        </div>
+                      </Link>
                     ))}
-                  </tbody>
-                </table>
-              )}
-            </Panel>
+                  </div>
+                )}
+              </Panel>
 
-            {/* Recent team race points */}
-            <Panel title="Recent Team Race Points">
-              {recentTeamRaces.length === 0 ? (
-                <div style={{ color: '#333', fontWeight: 800 }}>
-                  No team race points yet (or view not returning data).
-                </div>
-              ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ textAlign: 'left' }}>
-                      <th style={{ borderBottom: '1px solid #ddd', padding: 8, color: '#111' }}>Stage</th>
-                      <th style={{ borderBottom: '1px solid #ddd', padding: 8, color: '#111' }}>Race</th>
-                      <th style={{ borderBottom: '1px solid #ddd', padding: 8, color: '#111' }}>Sum</th>
-                      <th style={{ borderBottom: '1px solid #ddd', padding: 8, color: '#111' }}>Top5</th>
-                      <th style={{ borderBottom: '1px solid #ddd', padding: 8, color: '#111' }}>Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentTeamRaces.map((r) => (
-                      <tr key={r.race_id}>
-                        <td style={{ borderBottom: '1px solid #f0f0f0', padding: 8, color: '#111' }}>
-                          {r.stage_number ?? '—'}
-                        </td>
-                        <td style={{ borderBottom: '1px solid #f0f0f0', padding: 8, color: '#111' }}>
-                          {r.race_number ?? '—'}
-                        </td>
-                        <td style={{ borderBottom: '1px solid #f0f0f0', padding: 8, color: '#111' }}>
-                          {toNumber(r.team_points_sum)}
-                        </td>
-                        <td style={{ borderBottom: '1px solid #f0f0f0', padding: 8, color: '#111' }}>
-                          {toNumber(r.team_top5_bonus)}
-                        </td>
-                        <td style={{ borderBottom: '1px solid #f0f0f0', padding: 8, color: '#111', fontWeight: 950 }}>
-                          {toNumber(r.team_total_points)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </Panel>
-          </div>
-        </>
-      )}
-    </main>
+              {/* Stage standings */}
+              <Panel title="Stage Standings">
+                {stageSummary.length === 0 ? (
+                  <div className="subtle" style={{ fontWeight: 900 }}>
+                    No stage standings yet (or view not returning data).
+                  </div>
+                ) : (
+                  <div className="card" style={{ overflow: 'hidden', borderRadius: 14 }}>
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th className="th">Stage</th>
+                          <th className="th" style={{ textAlign: 'right' }}>
+                            Points
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {stageSummary.map((s, i) => (
+                          <tr key={`${s.name}-${i}`} className="rowHover">
+                            <td className="td" style={{ fontWeight: 900 }}>
+                              {s.name}
+                            </td>
+                            <td className="td" style={{ textAlign: 'right', fontWeight: 950 }}>
+                              {s.points}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </Panel>
+
+              {/* Recent team race points */}
+              <Panel title="Recent Team Race Points">
+                {recentTeamRaces.length === 0 ? (
+                  <div className="subtle" style={{ fontWeight: 900 }}>
+                    No team race points yet (or view not returning data).
+                  </div>
+                ) : (
+                  <div className="card" style={{ overflow: 'hidden', borderRadius: 14 }}>
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th className="th">Stage</th>
+                          <th className="th">Race</th>
+                          <th className="th" style={{ textAlign: 'right' }}>
+                            Sum
+                          </th>
+                          <th className="th" style={{ textAlign: 'right' }}>
+                            Top5
+                          </th>
+                          <th className="th" style={{ textAlign: 'right' }}>
+                            Total
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {recentTeamRaces.map((r) => (
+                          <tr key={r.race_id} className="rowHover">
+                            <td className="td">{r.stage_number ?? '—'}</td>
+                            <td className="td">{r.race_number ?? '—'}</td>
+                            <td className="td" style={{ textAlign: 'right', fontWeight: 900 }}>
+                              {toNumber(r.team_points_sum)}
+                            </td>
+                            <td className="td" style={{ textAlign: 'right', fontWeight: 900 }}>
+                              {toNumber(r.team_top5_bonus)}
+                            </td>
+                            <td className="td" style={{ textAlign: 'right', fontWeight: 950 }}>
+                              {toNumber(r.team_total_points)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </Panel>
+            </div>
+          </>
+        )}
+      </main>
+    </>
   )
 }
 
 function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div
-      style={{
-        border: '1px solid #d7d7d7',
-        borderRadius: 14,
-        padding: 14,
-        background: '#fff',
-        color: '#111',
-        boxShadow: '0 6px 16px rgba(0,0,0,0.08)',
-      }}
-    >
-      <div style={{ fontSize: 12, color: '#444', fontWeight: 800 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 950, marginTop: 6, color: '#111' }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: '#333', marginTop: 4 }}>{sub}</div>}
+    <div className="card cardPad">
+      <div style={{ fontSize: 12, color: 'rgba(229,231,235,0.72)', fontWeight: 900 }}>{label}</div>
+      <div style={{ fontSize: 22, fontWeight: 950, marginTop: 8 }}>{value}</div>
+      {sub && <div className="subtle" style={{ marginTop: 6, fontSize: 12 }}>{sub}</div>}
     </div>
   )
 }
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div
-      style={{
-        border: '1px solid #d7d7d7',
-        borderRadius: 14,
-        padding: 14,
-        background: '#fff',
-        color: '#111',
-        boxShadow: '0 6px 16px rgba(0,0,0,0.08)',
-      }}
-    >
-      <h2 style={{ margin: 0, marginBottom: 10, fontSize: 16, fontWeight: 950, color: '#111' }}>{title}</h2>
+    <div className="card cardPad">
+      <h2 style={{ margin: 0, marginBottom: 12, fontSize: 14, fontWeight: 950, letterSpacing: '0.02em' }}>
+        {title}
+      </h2>
       {children}
     </div>
   )
 }
+
