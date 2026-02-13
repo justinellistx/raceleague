@@ -5,7 +5,6 @@ type AvatarProps = {
   displayName?: string | null
   size?: number
   className?: string
-  // Optional: small tag like "P1" / "LEADER" / "STG W"
   badgeText?: string
 }
 
@@ -17,11 +16,14 @@ function initials(name?: string | null) {
 }
 
 export default function Avatar({
+  personId, // keep even if unused (or prefix with _personId)
   displayName,
   size = 40,
   className = '',
   badgeText,
 }: AvatarProps) {
+  void personId // prevents “unused” warnings if you have strict linting
+
   const init = initials(displayName)
 
   // Broadcast-y sizing

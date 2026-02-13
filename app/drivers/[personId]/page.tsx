@@ -257,7 +257,8 @@ export default function DriverProfilePage() {
             >
               {/* left side: avatar + name */}
               <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-                <Avatar personId={d.id} displayName={driverName} size={32} />
+                <Avatar personId={personId} displayName={driverName} size={56} badgeText={seasonRank ? `P${seasonRank}` : undefined} />
+
 
                 <div>
                   <div className="subtle" style={{ fontWeight: 950, letterSpacing: '0.08em' }}>
