@@ -5,14 +5,25 @@ import Link from 'next/link'
 import SiteNav from '@/app/components/SiteNav'
 import { supabase } from '@/lib/supabaseClient'
 
+type Breakdown = {
+  bonuses?: {
+    pole_position?: number
+    most_laps_led?: number
+    fastest_lap?: number
+    clean_race?: number
+  }
+  penalties?: {
+    incidents?: number
+  }
+}
+
 type RacePointsRow = {
   race_id: string
   person_id: string
   is_human: boolean | null
   base_points: number | null
-  bonus_points: number | null
-  penalty_points: number | null
   total_points: number | null
+  breakdown: Breakdown | null
 }
 
 type EventRow = { id: string; stage_number: number | null }
@@ -23,11 +34,17 @@ type Row = {
   person_id: string
   driver: string | null
   stage_number: number
-  base_points: number
-  bonus_points: number
-  penalty_points: number
-  stage_points_counted: number
+
+  base_total: number
+  pole_bonus: number
+  most_laps_led_bonus: number
+  fastest_lap_bonus: number
+  clean_race_bonus: number
+  incidents_penalty: number
+  total_points: number
 }
+
+const n = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) ? x : 0)
 
 export default function DriverStageStandingsPage() {
   const [rows, setRows] = useState<Row[]>([])
@@ -43,7 +60,7 @@ export default function DriverStageStandingsPage() {
       setError(null)
       setLoading(true)
 
-      // 1) Find events in this stage
+      // 1) Events in this stage
       const { data: events, error: eErr } = await supabase
         .from('events')
         .select('id, stage_number')
@@ -63,7 +80,7 @@ export default function DriverStageStandingsPage() {
         return
       }
 
-      // 2) Find races tied to those events
+      // 2) Races in those events
       const { data: races, error: rErr } = await supabase
         .from('iracing_races')
         .select('id, event_id')
@@ -83,10 +100,10 @@ export default function DriverStageStandingsPage() {
         return
       }
 
-      // 3) Pull race points for those races (HUMANS ONLY)
+      // 3) Points rows for those races (humans only)
       const { data: pts, error: pErr } = await supabase
         .from('v_iracing_race_points_calc')
-        .select('race_id, person_id, is_human, base_points, bonus_points, penalty_points, total_points')
+        .select('race_id, person_id, is_human, base_points, total_points, breakdown')
         .in('race_id', raceIds)
         .eq('is_human', true)
 
@@ -100,7 +117,7 @@ export default function DriverStageStandingsPage() {
       const pointsRows = (pts ?? []) as RacePointsRow[]
       const personIds = Array.from(new Set(pointsRows.map((r) => r.person_id)))
 
-      // 4) Load names
+      // 4) Names
       const { data: people, error: peopleErr } = await supabase
         .from('people')
         .select('id, display_name')
@@ -117,32 +134,44 @@ export default function DriverStageStandingsPage() {
         ((people ?? []) as PersonRow[]).map((p) => [p.id, p.display_name ?? 'Unknown'])
       )
 
-      // 5) Aggregate by driver for stage totals
+      // 5) Aggregate stage totals by driver
       const agg = new Map<string, Row>()
 
       for (const r of pointsRows) {
         if (r.is_human !== true) continue
 
+        const b = r.breakdown ?? null
+        const bonuses = b?.bonuses ?? {}
+        const penalties = b?.penalties ?? {}
+
         const cur = agg.get(r.person_id) ?? {
           person_id: r.person_id,
           driver: nameById.get(r.person_id) ?? 'Unknown',
           stage_number: stage,
-          base_points: 0,
-          bonus_points: 0,
-          penalty_points: 0,
-          stage_points_counted: 0,
+
+          base_total: 0,
+          pole_bonus: 0,
+          most_laps_led_bonus: 0,
+          fastest_lap_bonus: 0,
+          clean_race_bonus: 0,
+          incidents_penalty: 0,
+          total_points: 0,
         }
 
-        cur.base_points += r.base_points ?? 0
-        cur.bonus_points += r.bonus_points ?? 0
-        cur.penalty_points += r.penalty_points ?? 0
-        cur.stage_points_counted += r.total_points ?? 0
+        cur.base_total += r.base_points ?? 0
+        cur.total_points += r.total_points ?? 0
+
+        cur.pole_bonus += n(bonuses.pole_position)
+        cur.most_laps_led_bonus += n(bonuses.most_laps_led)
+        cur.fastest_lap_bonus += n(bonuses.fastest_lap)
+        cur.clean_race_bonus += n(bonuses.clean_race)
+
+        cur.incidents_penalty += n(penalties.incidents)
 
         agg.set(r.person_id, cur)
       }
 
-      const list = Array.from(agg.values()).sort((a, b) => b.stage_points_counted - a.stage_points_counted)
-
+      const list = Array.from(agg.values()).sort((a, b) => b.total_points - a.total_points)
       setRows(list)
       setLoading(false)
     }
@@ -167,7 +196,7 @@ export default function DriverStageStandingsPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'baseline' }}>
           <div>
             <h1 className="h1" style={{ marginBottom: 6 }}>Driver Stage Standings</h1>
-            <div className="subtle">Humans only • Base / Bonus / Penalty included</div>
+            <div className="subtle">Humans only • Bonus & penalties by type</div>
           </div>
 
           <Link
@@ -246,9 +275,7 @@ export default function DriverStageStandingsPage() {
           </div>
         ) : filtered.length === 0 && !error ? (
           <div className="card cardPad">
-            <div className="subtle" style={{ fontWeight: 900 }}>
-              No stage standings yet (preseason).
-            </div>
+            <div className="subtle" style={{ fontWeight: 900 }}>No stage standings yet (preseason).</div>
           </div>
         ) : (
           <div className="card" style={{ overflow: 'hidden', borderRadius: 16 }}>
@@ -258,8 +285,11 @@ export default function DriverStageStandingsPage() {
                   <th className="th">Pos</th>
                   <th className="th">Driver</th>
                   <th className="th" style={{ textAlign: 'right' }}>Base</th>
-                  <th className="th" style={{ textAlign: 'right' }}>Bonus</th>
-                  <th className="th" style={{ textAlign: 'right' }}>Pen</th>
+                  <th className="th" style={{ textAlign: 'right' }}>Pole</th>
+                  <th className="th" style={{ textAlign: 'right' }}>MLL</th>
+                  <th className="th" style={{ textAlign: 'right' }}>Fast Lap</th>
+                  <th className="th" style={{ textAlign: 'right' }}>Clean</th>
+                  <th className="th" style={{ textAlign: 'right' }}>Inc Pen</th>
                   <th className="th" style={{ textAlign: 'right' }}>Total</th>
                 </tr>
               </thead>
@@ -268,12 +298,13 @@ export default function DriverStageStandingsPage() {
                   <tr key={`${r.person_id}-${idx}`} className="rowHover">
                     <td className="td" style={{ fontWeight: 950 }}>{idx + 1}</td>
                     <td className="td" style={{ fontWeight: 950 }}>{r.driver ?? 'Driver'}</td>
-                    <td className="td" style={{ textAlign: 'right', fontWeight: 900 }}>{r.base_points}</td>
-                    <td className="td" style={{ textAlign: 'right', fontWeight: 900 }}>{r.bonus_points}</td>
-                    <td className="td" style={{ textAlign: 'right', fontWeight: 900 }}>{r.penalty_points}</td>
-                    <td className="td" style={{ textAlign: 'right', fontWeight: 950 }}>
-                      {Number(r.stage_points_counted ?? 0)}
-                    </td>
+                    <td className="td" style={{ textAlign: 'right', fontWeight: 900 }}>{r.base_total}</td>
+                    <td className="td" style={{ textAlign: 'right', fontWeight: 900 }}>{r.pole_bonus}</td>
+                    <td className="td" style={{ textAlign: 'right', fontWeight: 900 }}>{r.most_laps_led_bonus}</td>
+                    <td className="td" style={{ textAlign: 'right', fontWeight: 900 }}>{r.fastest_lap_bonus}</td>
+                    <td className="td" style={{ textAlign: 'right', fontWeight: 900 }}>{r.clean_race_bonus}</td>
+                    <td className="td" style={{ textAlign: 'right', fontWeight: 900 }}>{r.incidents_penalty}</td>
+                    <td className="td" style={{ textAlign: 'right', fontWeight: 950 }}>{r.total_points}</td>
                   </tr>
                 ))}
               </tbody>
@@ -284,4 +315,5 @@ export default function DriverStageStandingsPage() {
     </>
   )
 }
+
 
