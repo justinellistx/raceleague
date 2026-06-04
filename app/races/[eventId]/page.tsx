@@ -92,16 +92,7 @@ export default function RaceResultsPage() {
       // 3) Raw results (pull person id too so we can link)
       const { data: raw, error: rawErr } = await supabase
         .from('iracing_results_raw')
-        .select(
-          `
-          finish_position,
-          start_position,
-          laps_led,
-          fastest_lap_time_ms,
-          incidents,
-          people!inner(id, display_name, is_human)
-        `
-        )
+        .select('person_id, finish_position, start_position, laps_led, fastest_lap_time_ms, incidents')
         .eq('race_id', raceId)
         .order('finish_position', { ascending: true })
 
@@ -110,22 +101,40 @@ export default function RaceResultsPage() {
         return
       }
 
-      // 4) Points (optional)
-      const { data: pts, error: ptsErr } = await supabase
+      // 3b) Resolve driver names (no FK-embedded join: views can't satisfy it)
+      const personIds = Array.from(
+        new Set((raw ?? []).map((r: any) => r.person_id).filter(Boolean))
+      )
+
+      const { data: people } = await supabase
+        .from('people')
+        .select('id, display_name, is_human')
+        .in('id', personIds)
+
+      const personById = new Map<string, { display_name: string; is_human: boolean }>()
+      ;(people ?? []).forEach((p: any) => {
+        personById.set(p.id, {
+          display_name: p.display_name ?? 'Unknown',
+          is_human: p.is_human === true,
+        })
+      })
+
+      // 4) Points (optional) — map by person_id
+      const { data: pts } = await supabase
         .from('iracing_points_awarded')
-        .select('total_points, people!inner(id, display_name)')
+        .select('person_id, total_points')
         .eq('race_id', raceId)
 
       const pointsMap = new Map<string, number>()
       ;(pts ?? []).forEach((p: any) => {
-        const k = p?.people?.id || p?.people?.display_name
-        if (k) pointsMap.set(k, p.total_points)
+        if (p?.person_id != null) pointsMap.set(p.person_id, p.total_points)
       })
 
       const merged: ResultRow[] = (raw ?? []).map((r: any) => {
-        const name = r.people?.display_name ?? 'Unknown'
-        const pid = r.people?.id ?? null
-        const isHuman = r.people?.is_human === true
+        const pid = r.person_id ?? null
+        const person = pid ? personById.get(pid) : undefined
+        const name = person?.display_name ?? 'Unknown'
+        const isHuman = person?.is_human === true
 
         return {
           person_id: pid,
@@ -136,7 +145,7 @@ export default function RaceResultsPage() {
           fastest_lap_time_ms: r.fastest_lap_time_ms ?? null,
           incidents: r.incidents ?? 0,
           is_ai: !isHuman,
-          points: (pid && pointsMap.has(pid)) ? (pointsMap.get(pid) ?? null) : (pointsMap.get(name) ?? null),
+          points: pid && pointsMap.has(pid) ? (pointsMap.get(pid) ?? null) : null,
         }
       })
 

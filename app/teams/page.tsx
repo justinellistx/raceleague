@@ -8,6 +8,7 @@ import SiteNav from '@/app/components/SiteNav'
 type Team = {
   id: string
   name: string | null
+  stage_number: number | null
 }
 
 type TeamMember = {
@@ -26,6 +27,7 @@ export default function TeamsPage() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [people, setPeople] = useState<Person[]>([])
   const [q, setQ] = useState<string>('')
+  const [stage, setStage] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -36,12 +38,19 @@ export default function TeamsPage() {
 
       const { data: t, error: tErr } = await supabase
         .from('teams')
-        .select('id, name')
+        .select('id, name, stage_number')
         .order('name', { ascending: true })
 
       if (cancelled) return
       if (tErr) return setError(tErr.message)
-      setTeams((t ?? []) as Team[])
+      const teamRows = (t ?? []) as Team[]
+      setTeams(teamRows)
+      // Default the stage filter to the current (highest) stage that has teams.
+      setStage((prev) => {
+        if (prev != null) return prev
+        const stages = teamRows.map((x) => x.stage_number ?? 1)
+        return stages.length ? Math.max(...stages) : 1
+      })
 
       const { data: tm, error: tmErr } = await supabase
         .from('team_members')
@@ -86,14 +95,18 @@ export default function TeamsPage() {
     return map
   }, [teamMembers, peopleById])
 
+  const availableStages = useMemo(() => {
+    const set = new Set<number>()
+    for (const t of teams) set.add(t.stage_number ?? 1)
+    return Array.from(set).sort((a, b) => a - b)
+  }, [teams])
+
   const filteredTeams = useMemo(() => {
     const needle = q.trim().toLowerCase()
-    const list = needle
-      ? teams.filter((t) => (t.name ?? '').toLowerCase().includes(needle))
-      : teams
-
+    let list = stage == null ? teams : teams.filter((t) => (t.stage_number ?? 1) === stage)
+    if (needle) list = list.filter((t) => (t.name ?? '').toLowerCase().includes(needle))
     return [...list].sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''))
-  }, [teams, q])
+  }, [teams, q, stage])
 
   return (
     <>
@@ -113,6 +126,28 @@ export default function TeamsPage() {
             placeholder="Search team..."
             style={{ width: 320 }}
           />
+          {availableStages.length > 1 && (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <span className="subtle" style={{ fontWeight: 950 }}>Stage</span>
+              {availableStages.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setStage(s)}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 12,
+                    fontWeight: 950,
+                    cursor: 'pointer',
+                    color: '#e5e7eb',
+                    border: stage === s ? '1px solid rgba(96,165,250,0.6)' : '1px solid rgba(255,255,255,0.14)',
+                    background: stage === s ? 'rgba(96,165,250,0.18)' : 'rgba(255,255,255,0.06)',
+                  }}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="subtle" style={{ fontWeight: 950 }}>
             {filteredTeams.length} teams
           </div>

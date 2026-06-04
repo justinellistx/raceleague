@@ -59,9 +59,11 @@ export default function DriversPage() {
       if (tErr) return setError(tErr.message)
       setTeams((t ?? []) as Team[])
 
+      // Ordered by stage so the current-stage team wins in the person->team map (last write wins).
       const { data: tm, error: tmErr } = await supabase
         .from('team_members')
-        .select('team_id, person_id')
+        .select('team_id, person_id, stage_number')
+        .order('stage_number', { ascending: true })
 
       if (cancelled) return
       if (tmErr) return setError(tmErr.message)

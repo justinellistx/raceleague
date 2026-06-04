@@ -5,19 +5,6 @@ import { useRouter } from 'next/navigation'
 import SiteNav from '@/app/components/SiteNav'
 import { supabase } from '@/lib/supabaseClient'
 
-type Breakdown = {
-  base_points?: number
-  bonuses?: {
-    pole_position?: number
-    most_laps_led?: number
-    fastest_lap?: number
-    clean_race?: number
-  }
-  penalties?: {
-    incidents?: number
-  }
-}
-
 type RacePointsRow = {
   person_id: string
   is_human: boolean | null
@@ -25,7 +12,6 @@ type RacePointsRow = {
   bonus_points: number | null
   penalty_points: number | null
   total_points: number | null
-  breakdown: Breakdown | null
 }
 
 type PersonRow = {
@@ -39,16 +25,9 @@ type StandingRow = {
 
   // Totals
   base_total: number
+  bonus_total: number
+  penalty_total: number
   total_points: number
-
-  // Bonus columns you asked for
-  pole_bonus: number // “starting position bonus” (pole)
-  most_laps_led_bonus: number
-  fastest_lap_bonus: number
-  clean_race_bonus: number
-
-  // Penalty column you asked for
-  incidents_penalty: number
 }
 
 const n = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) ? x : 0)
@@ -71,7 +50,7 @@ export default function StandingsPage() {
       // Pull race points + breakdown for HUMANS ONLY
       const { data: points, error: pErr } = await supabase
         .from('v_iracing_race_points_calc')
-        .select('person_id, is_human, base_points, bonus_points, penalty_points, total_points, breakdown')
+        .select('person_id, is_human, base_points, bonus_points, penalty_points, total_points')
         .eq('is_human', true)
 
       if (cancelled) return
@@ -106,37 +85,21 @@ export default function StandingsPage() {
       for (const r of pts) {
         if (r.is_human !== true) continue
 
-        const b = r.breakdown ?? null
-        const bonuses = b?.bonuses ?? {}
-        const penalties = b?.penalties ?? {}
-
         const cur = agg.get(r.person_id) ?? {
           person_id: r.person_id,
           driver: nameById.get(r.person_id) ?? 'Unknown',
 
           base_total: 0,
+          bonus_total: 0,
+          penalty_total: 0,
           total_points: 0,
-
-          pole_bonus: 0,
-          most_laps_led_bonus: 0,
-          fastest_lap_bonus: 0,
-          clean_race_bonus: 0,
-
-          incidents_penalty: 0,
         }
 
         // Totals (from columns)
-        cur.base_total += r.base_points ?? 0
-        cur.total_points += r.total_points ?? 0
-
-        // Bonus breakdown (from JSON)
-        cur.pole_bonus += n(bonuses.pole_position)
-        cur.most_laps_led_bonus += n(bonuses.most_laps_led)
-        cur.fastest_lap_bonus += n(bonuses.fastest_lap)
-        cur.clean_race_bonus += n(bonuses.clean_race)
-
-        // Penalty breakdown (from JSON)
-        cur.incidents_penalty += n(penalties.incidents)
+        cur.base_total += n(r.base_points)
+        cur.bonus_total += n(r.bonus_points)
+        cur.penalty_total += n(r.penalty_points)
+        cur.total_points += n(r.total_points)
 
         agg.set(r.person_id, cur)
       }
@@ -218,7 +181,7 @@ export default function StandingsPage() {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '70px 1fr 90px 90px 110px 110px 110px 110px 120px',
+                  gridTemplateColumns: '70px 1fr 110px 110px 110px 120px',
                   padding: '12px 14px',
                   fontWeight: 950,
                   color: '#e5e7eb',
@@ -229,11 +192,8 @@ export default function StandingsPage() {
                 <div>POS</div>
                 <div>DRIVER</div>
                 <div style={{ textAlign: 'right' }}>BASE</div>
-                <div style={{ textAlign: 'right' }}>POLE</div>
-                <div style={{ textAlign: 'right' }}>MLL</div>
-                <div style={{ textAlign: 'right' }}>FAST LAP</div>
-                <div style={{ textAlign: 'right' }}>CLEAN</div>
-                <div style={{ textAlign: 'right' }}>INC PEN</div>
+                <div style={{ textAlign: 'right' }}>BONUS</div>
+                <div style={{ textAlign: 'right' }}>PEN</div>
                 <div style={{ textAlign: 'right' }}>TOTAL</div>
               </div>
             </div>
@@ -252,7 +212,7 @@ export default function StandingsPage() {
                   className="rowHover"
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '70px 1fr 90px 90px 110px 110px 110px 110px 120px',
+                    gridTemplateColumns: '70px 1fr 110px 110px 110px 120px',
                     padding: '12px 14px',
                     borderTop: '1px solid rgba(255,255,255,0.08)',
                     alignItems: 'center',
@@ -267,11 +227,8 @@ export default function StandingsPage() {
                   </div>
 
                   <div style={{ textAlign: 'right', fontWeight: 900, color: '#e5e7eb' }}>{r.base_total}</div>
-                  <div style={{ textAlign: 'right', fontWeight: 900, color: '#e5e7eb' }}>{r.pole_bonus}</div>
-                  <div style={{ textAlign: 'right', fontWeight: 900, color: '#e5e7eb' }}>{r.most_laps_led_bonus}</div>
-                  <div style={{ textAlign: 'right', fontWeight: 900, color: '#e5e7eb' }}>{r.fastest_lap_bonus}</div>
-                  <div style={{ textAlign: 'right', fontWeight: 900, color: '#e5e7eb' }}>{r.clean_race_bonus}</div>
-                  <div style={{ textAlign: 'right', fontWeight: 900, color: '#e5e7eb' }}>{r.incidents_penalty}</div>
+                  <div style={{ textAlign: 'right', fontWeight: 900, color: '#e5e7eb' }}>{r.bonus_total}</div>
+                  <div style={{ textAlign: 'right', fontWeight: 900, color: '#e5e7eb' }}>{r.penalty_total}</div>
 
                   <div style={{ textAlign: 'right', fontWeight: 950, color: '#e5e7eb' }}>{r.total_points}</div>
                 </div>

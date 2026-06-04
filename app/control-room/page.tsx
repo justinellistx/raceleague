@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
 import SiteNav from '@/app/components/SiteNav'
 
@@ -46,6 +47,18 @@ export default function ControlRoom() {
   return (
     <main style={{ padding: 24, fontFamily: 'system-ui', maxWidth: 720 }}>
       <h1 style={{ fontSize: 28, fontWeight: 900, marginBottom: 12 }}>Control Room</h1>
+
+      <Link
+        href="/control-room/stage-points"
+        style={{
+          display: 'inline-block', marginBottom: 18, padding: '10px 14px', borderRadius: 10,
+          border: '1px solid #111', background: '#111', color: '#fff', fontWeight: 800, textDecoration: 'none',
+        }}
+      >
+        → Stage Points Entry (in-race Stage 1 &amp; 2 top-5)
+      </Link>
+
+      <div style={{ height: 4 }} />
 
       <label style={{ fontWeight: 700 }}>Admin Token</label>
       <input

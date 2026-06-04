@@ -80,16 +80,18 @@ export default function DriverProfilePage() {
       if (!p) return setError('Driver not found.')
       setPerson(p as Person)
 
-      // Team (optional)
-      const { data: tm, error: tmErr } = await supabase
+      // Team (optional) — a driver can be on multiple teams across stages,
+      // so fetch all memberships and use the current (highest) stage's team.
+      const { data: tmRows, error: tmErr } = await supabase
         .from('team_members')
-        .select('team_id, person_id')
+        .select('team_id, person_id, stage_number')
         .eq('person_id', personId)
-        .maybeSingle()
+        .order('stage_number', { ascending: false })
 
       if (cancelled) return
       if (tmErr) return setError(tmErr.message)
 
+      const tm = (tmRows ?? [])[0]
       if (tm?.team_id) {
         setTeamId(tm.team_id)
 
